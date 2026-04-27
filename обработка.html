@@ -548,8 +548,7 @@ function drawBox(ctx,fn,x,y,z,w,h,d,ct,cf,cs){
   });
   faces.sort((a,b)=>b.avgFz-a.avgFz);
   faces.forEach(({pts,c})=>{
-    fillQ(ctx,pts,c);
-    strokeQ(ctx,pts,'rgba(0,0,0,0.15)',0.5);
+    if(fillQ(ctx,pts,c))strokeQ(ctx,pts,'rgba(0,0,0,0.15)',0.5);
   });
 }
 
