@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Imposition Studio 3D Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#080d18;min-height:100vh;color:white;overflow-x:hidden}
+
+/* TOP BAR */
+.top-bar{background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.07);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;backdrop-filter:blur(12px)}
+.logo{font-size:1.1rem;font-weight:700;color:#e94560}
+.lib-row{display:flex;align-items:center;gap:8px;font-size:0.75rem}
+.lib-dot{width:7px;height:7px;border-radius:50%;background:#fc8181;transition:background .4s}
+.lib-dot.ok{background:#48bb78}
+.lib-btn{padding:4px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);cursor:pointer;font-size:0.72rem;transition:all .2s}
+.lib-btn:hover{border-color:#e94560;color:#e94560}
+#libFile{display:none}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:1fr 380px;height:calc(100vh - 53px)}
+
+/* 3D PANEL */
+.p3d{position:relative;background:radial-gradient(ellipse at 40% 40%,#0d1829 0%,#040810 100%);overflow:hidden}
+#c3d{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+.view-ctrl{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+.vb{padding:5px 12px;border:1px solid rgba(255,255,255,0.12);border-radius:16px;background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.55);cursor:pointer;font-size:0.7rem;transition:all .2s;backdrop-filter:blur(6px)}
+.vb:hover,.vb.on{border-color:#e94560;color:#e94560;background:rgba(233,69,96,0.1)}
+.flip-ctrl{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:4px}
+.fb{padding:4px 10px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.45);cursor:pointer;font-size:0.68rem;transition:all .2s}
+.fb:hover,.fb.on{border-color:#63b3ed;color:#63b3ed;background:rgba(99,179,237,0.08)}
+.scene-lbl{position:absolute;top:12px;left:14px;font-size:0.68rem;color:rgba(255,255,255,0.25);letter-spacing:.8px;text-transform:uppercase}
+.zoom-info{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);font-size:0.62rem;color:rgba(255,255,255,0.18)}
+
+/* RIGHT PANEL */
+.pr{background:rgba(255,255,255,0.015);border-left:1px solid rgba(255,255,255,0.06);overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+.pr::-webkit-scrollbar{width:3px}
+.pr::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
+.stitle{font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.stitle::before{content:'';width:3px;height:12px;background:#e94560;border-radius:1px;display:inline-block}
+
+.upz{border:2px dashed rgba(255,255,255,0.1);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(255,255,255,0.01);position:relative}
+.upz:hover,.upz.dv{border-color:#e94560;background:rgba(233,69,96,0.04)}
+.upz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.up-ico{font-size:1.6rem;margin-bottom:6px}
+.up-txt{color:rgba(255,255,255,0.55);font-size:0.8rem}
+.up-sub{color:rgba(255,255,255,0.25);font-size:0.65rem;margin-top:3px}
+.fbadge{display:none;margin-top:8px;padding:7px 12px;background:rgba(233,69,96,0.08);border:1px solid rgba(233,69,96,0.2);border-radius:7px;color:#e94560;font-size:0.75rem}
+
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mitem{border:1.5px solid rgba(255,255,255,0.07);border-radius:9px;padding:9px 11px;cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.015);display:flex;align-items:center;gap:9px;position:relative}
+.mitem:hover{border-color:rgba(233,69,96,0.35)}
+.mitem.sel{border-color:#e94560;background:rgba(233,69,96,0.08);box-shadow:0 0 12px rgba(233,69,96,0.12)}
+.mvis{width:52px;height:32px;flex-shrink:0;border-radius:4px;background:rgba(0,0,0,0.3);display:flex;gap:1px;padding:2px;overflow:hidden}
+.mside{flex:1;display:grid;gap:1px}
+.mcell{border-radius:1px;display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:bold;color:rgba(255,255,255,0.9)}
+.minfo{flex:1;min-width:0}
+.mname{font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdesc{font-size:0.65rem;color:rgba(255,255,255,0.3)}
+.mdel{position:absolute;right:7px;top:6px;background:none;border:none;color:rgba(255,100,100,0.3);cursor:pointer;font-size:0.75rem;transition:color .2s}
+.mdel:hover{color:#e94560}
+.mchk{color:#e94560;font-size:0.8rem;position:absolute;right:7px;bottom:6px}
+
+.add-btn{width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,0.1);border-radius:9px;background:rgba(255,255,255,0.01);color:rgba(255,255,255,0.35);cursor:pointer;font-size:0.75rem;transition:all .2s;margin-top:6px}
+.add-btn:hover{border-color:rgba(255,255,255,0.25);color:rgba(255,255,255,0.6)}
+
+.proc-btn{width:100%;padding:12px;background:linear-gradient(135deg,#e94560,#c73652);border:none;border-radius:10px;color:white;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .3s;letter-spacing:.4px}
+.proc-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 7px 22px rgba(233,69,96,0.4)}
+.proc-btn:disabled{opacity:.35;cursor:not-allowed}
+.bc{display:flex;align-items:center;justify-content:center;gap:7px}
+
+.pw{display:none}
+.pbb{background:rgba(255,255,255,0.06);border-radius:50px;height:5px;overflow:hidden;margin-bottom:5px}
+.pb{height:100%;background:linear-gradient(90deg,#e94560,#f06280);border-radius:50px;width:0%;transition:width .2s}
+.pt{color:rgba(255,255,255,0.35);font-size:0.68rem;text-align:center;margin-bottom:3px}
+.eta{color:rgba(246,173,85,0.7);font-size:0.65rem;text-align:center;margin-bottom:6px;min-height:14px}
+.lbox{background:rgba(0,0,0,0.3);border-radius:7px;padding:9px;max-height:100px;overflow-y:auto;font-family:monospace;font-size:0.67rem;border:1px solid rgba(255,255,255,0.03)}
+.lbox::-webkit-scrollbar{width:2px}
+.lbox::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
+.le{padding:1px 0;display:flex;gap:5px}
+.lt{color:rgba(255,255,255,0.18);flex-shrink:0}
+.lm{color:rgba(255,255,255,0.55)}.ls{color:#48bb78}.le2{color:#fc8181}.li{color:#63b3ed}.lw{color:#f6ad55}
+
+.rbox{display:none;padding:12px;background:rgba(72,187,120,0.07);border:1px solid rgba(72,187,120,0.2);border-radius:10px}
+.rtitle{color:#48bb78;font-size:0.8rem;font-weight:600;margin-bottom:9px}
+.rstats{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px}
+.rs{text-align:center;padding:7px;background:rgba(0,0,0,0.18);border-radius:6px}
+.rv{color:#48bb78;font-size:1.1rem;font-weight:700}
+.rl{color:rgba(255,255,255,0.35);font-size:0.62rem;margin-top:1px}
+.dl-btn{width:100%;padding:9px;background:linear-gradient(135deg,#48bb78,#38a169);border:none;border-radius:8px;color:white;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all .3s}
+.dl-btn:hover{transform:translateY(-1px);box-shadow:0 5px 15px rgba(72,187,120,0.3)}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:10px}
+.ov.open{display:flex}
+.modal{background:#0b1120;border:1px solid rgba(255,255,255,0.07);border-radius:18px;width:100%;max-width:1300px;height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 40px 80px rgba(0,0,0,0.9)}
+.mhdr{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mhdr h2{font-size:1rem;color:white}
+.mcls{background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.45);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mcls:hover{background:rgba(233,69,96,0.3);color:white}
+
+/* Modal body: 3 columns */
+.mbody{display:grid;grid-template-columns:1fr 1fr 340px;flex:1;overflow:hidden;min-height:0}
+
+/* Canvas панели в модале */
+.m3dp{position:relative;overflow:hidden}
+.m3dp canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+.m3dp canvas:active{cursor:grabbing}
+.m3d-tabs{position:absolute;top:8px;left:8px;display:flex;gap:4px;z-index:10}
+.mtab{padding:3px 9px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.4);font-size:0.65rem;cursor:pointer;transition:all .2s}
+.mtab.on{border-color:#e94560;color:#e94560;background:rgba(233,69,96,0.1)}
+.mhint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:0.6rem;color:rgba(255,255,255,0.18);white-space:nowrap;pointer-events:none}
+
+/* Настройки матрицы */
+.mset{overflow-y:auto;padding:14px;border-left:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:10px}
+.mset::-webkit-scrollbar{width:3px}
+.mset::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
+.mg{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:11px}
+.mgt{color:rgba(255,255,255,0.45);font-size:0.67rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;font-weight:600}
+.fr{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.fr:last-child{margin-bottom:0}
+.ff{flex:1;min-width:75px}
+.fl{color:rgba(255,255,255,0.38);font-size:0.67rem;margin-bottom:3px;display:block}
+.fi,.fs{width:100%;padding:5px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:6px;color:white;font-size:0.77rem;outline:none;transition:border-color .2s}
+.fi:focus,.fs:focus{border-color:#e94560}
+.fs option{background:#0b1120}
+
+/* Слоты вертикально */
+.slots-wrap{display:flex;flex-direction:column;gap:8px}
+.sb{background:rgba(0,0,0,0.2);border-radius:7px;overflow:hidden}
+.sbh{padding:5px 9px;background:rgba(255,255,255,0.03);font-size:0.67rem;color:rgba(255,255,255,0.45);font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04)}
+.sl2{display:flex;flex-direction:column;gap:1px;padding:3px}
+.sr{display:flex;align-items:center;gap:5px;padding:4px 5px;border-radius:4px;background:rgba(255,255,255,0.015)}
+.sr:hover{background:rgba(255,255,255,0.035)}
+.sd{width:8px;height:8px;border-radius:2px;flex-shrink:0;transition:background .3s}
+.slbl{color:rgba(255,255,255,0.22);font-size:0.6rem;width:30px;flex-shrink:0}
+.si{flex:1;padding:3px 6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.07);border-radius:4px;color:white;font-size:0.72rem;outline:none}
+.si:focus{border-color:#e94560}
+.si[readonly]{opacity:.45;cursor:default}
+.snote{font-size:0.62rem;color:rgba(255,255,255,0.22);line-height:1.55;padding:5px 7px;background:rgba(0,0,0,0.2);border-radius:5px}
+
+.mftr{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.05);display:flex;gap:7px;flex-shrink:0}
+.mfb{flex:1;padding:8px;border:none;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+.mfb-s{background:linear-gradient(135deg,#e94560,#c73652);color:white}
+.mfb-s:hover{transform:translateY(-1px)}
+.mfb-c{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.07)}
+.mfb-c:hover{background:rgba(255,255,255,0.09);color:white}
+
+/* 3D DnD individual fragment rotation badge */
+.frot-badge{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:8px;cursor:pointer;color:rgba(255,255,255,0.6)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">📄 PDF Imposition Studio 3D Pro</div>
+  <div class="lib-row">
+    <div class="lib-dot" id="libDot"></div>
+    <span id="libLbl" style="color:rgba(255,255,255,0.35)">pdf-lib не загружена</span>
+    <button class="lib-btn" onclick="document.getElementById('libFile').click()">📂 Локально</button>
+    <input type="file" id="libFile" accept=".js">
+    <button class="lib-btn" onclick="loadCDN()">🌐 CDN</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- 3D СЦЕНА -->
+  <div class="p3d">
+    <canvas id="c3d"></canvas>
+    <div class="scene-lbl" id="sceneLbl">ПРИНТЕР</div>
+    <div class="zoom-info">🖱 Колёсико — зум без ограничений · Drag — вращение</div>
+    <div class="view-ctrl">
+      <button class="vb on" id="vbP" onclick="setVMode('printer')">🖨️ Принтер</button>
+      <button class="vb" id="vbS" onclick="setVMode('sheet')">📄 Лист</button>
+    </div>
+    <div class="flip-ctrl">
+      <div style="color:rgba(255,255,255,0.3);font-size:0.62rem;text-align:right;margin-bottom:2px">Переворот</div>
+      <button class="fb on" id="fbL" onclick="setFlip('long')">По длинному краю</button>
+      <button class="fb" id="fbS" onclick="setFlip('short')">По короткому краю</button>
+    </div>
+  </div>
+
+  <!-- ПРАВАЯ ПАНЕЛЬ -->
+  <div class="pr">
+    <div>
+      <div class="stitle">Шаг 1: PDF файл</div>
+      <div class="upz" id="upz">
+        <input type="file" id="fInput" accept=".pdf">
+        <div class="up-ico">📁</div>
+        <div class="up-txt">Перетащите PDF или нажмите</div>
+        <div class="up-sub">До 10 000 страниц</div>
+      </div>
+      <div class="fbadge" id="fbadge"></div>
+    </div>
+    <div>
+      <div class="stitle">Шаг 2: Матрица</div>
+      <div class="mlist" id="mlist"></div>
+      <button class="add-btn" onclick="openModal()">＋ Создать матрицу</button>
+    </div>
+    <div>
+      <button class="proc-btn" id="procBtn" onclick="startProc()" disabled>
+        <div class="bc"><span>⚙️</span><span>Обработать PDF</span></div>
+      </button>
+    </div>
+    <div class="pw" id="pw">
+      <div class="pt" id="pt">...</div>
+      <div class="pbb"><div class="pb" id="pb"></div></div>
+      <div class="eta" id="eta"></div>
+      <div class="lbox" id="lbox"></div>
+    </div>
+    <div class="rbox" id="rbox">
+      <div class="rtitle">✅ Готово!</div>
+      <div class="rstats">
+        <div class="rs"><div class="rv" id="sIn">0</div><div class="rl">Страниц</div></div>
+        <div class="rs"><div class="rv" id="sOut">0</div><div class="rl">Листов</div></div>
+        <div class="rs"><div class="rv" id="sGr">0</div><div class="rl">Групп</div></div>
+        <div class="rs"><div class="rv" id="sSz">0</div><div class="rl">МБ</div></div>
+      </div>
+      <button class="dl-btn" id="dlBtn">⬇️ Скачать PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛ -->
+<div class="ov" id="ov">
+ <div class="modal">
+  <div class="mhdr">
+    <h2>🛠 Конструктор матрицы</h2>
+    <button class="mcls" onclick="closeModal()">✕</button>
+  </div>
+  <div class="mbody">
+    <!-- Левая: 2D DnD расстановка -->
+    <div class="m3dp" id="m2dPanel">
+      <canvas id="m2dCanvas"></canvas>
+      <div class="m3d-tabs">
+        <div class="mtab on" onclick="setMTab('2d',this)">📐 2D Расстановка</div>
+      </div>
+      <div class="mhint">Перетащите фрагменты на слоты</div>
+    </div>
+    <!-- Центр: 3D расстановка / просмотр -->
+    <div class="m3dp" id="m3dPanel">
+      <canvas id="m3dCanvas"></canvas>
+      <div class="m3d-tabs">
+        <div class="mtab on" id="tab3dL" onclick="setM3DTab('layout',this)">🧊 3D Расстановка</div>
+        <div class="mtab" id="tab3dV" onclick="setM3DTab('view',this)">📄 Просмотр</div>
+      </div>
+      <div class="mhint" id="m3dHint">ПКМ/правый drag — вращение · Перетащите листы на лист · Колёсико — зум</div>
+    </div>
+    <!-- Правая: настройки -->
+    <div class="mset">
+      <div class="mg">
+        <div class="mgt">Основное</div>
+        <div class="fr">
+          <div class="ff" style="flex:2"><span class="fl">Название</span><input class="fi" id="mN" placeholder="Моя матрица"></div>
+          <div class="ff"><span class="fl">Формат</span>
+            <select class="fs" id="mP" onchange="onPC()">
+              <option value="A4L">A4 альбом</option><option value="A4P">A4 портрет</option>
+              <option value="A3L">A3 альбом</option><option value="A3P">A3 портрет</option>
+              <option value="A5L">A5 альбом</option><option value="A5P">A5 портрет</option>
+              <option value="CUS">Свой</option>
+            </select>
+          </div>
+        </div>
+        <div class="fr" id="cusR" style="display:none">
+          <div class="ff"><span class="fl">Ш мм</span><input class="fi" id="mCW" type="number" value="297"></div>
+          <div class="ff"><span class="fl">В мм</span><input class="fi" id="mCH" type="number" value="210"></div>
+        </div>
+        <div class="fr">
+          <div class="ff"><span class="fl">Колонок</span><input class="fi" id="mCo" type="number" value="2" min="1" max="8" oninput="onGC()"></div>
+          <div class="ff"><span class="fl">Строк</span><input class="fi" id="mRo" type="number" value="1" min="1" max="8" oninput="onGC()"></div>
+          <div class="ff"><span class="fl">Сторон</span>
+            <select class="fs" id="mSi" onchange="onGC()">
+              <option value="2">2 (двуст.)</option><option value="1">1 (одност.)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="mg">
+        <div class="mgt">Параметры</div>
+        <div class="fr">
+          <div class="ff"><span class="fl">Поля мм</span><input class="fi" id="mMa" type="number" value="0" min="0" max="50"></div>
+          <div class="ff"><span class="fl">Зазор мм</span><input class="fi" id="mGu" type="number" value="0" min="0" max="30"></div>
+        </div>
+        <div class="fr">
+          <div class="ff"><span class="fl">Масштаб</span>
+            <select class="fs" id="mSc"><option value="fit">Вписать</option><option value="fill">Заполнить</option><option value="stretch">Растянуть</option><option value="none">1:1</option></select>
+          </div>
+          <div class="ff"><span class="fl">Поворот стр.</span>
+            <select class="fs" id="mRt"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select>
+          </div>
+        </div>
+        <div class="fr">
+          <div class="ff"><span class="fl">Тип</span>
+            <select class="fs" id="mTy" onchange="onGC()">
+              <option value="booklet">Буклет (спуск)</option>
+              <option value="seq">Последовательный</option>
+              <option value="custom">Вручную</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="mg">
+        <div class="mgt">Слоты страниц</div>
+        <div id="slotsC"></div>
+        <div class="snote" id="snote" style="margin-top:7px"></div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="mfb mfb-c" onclick="closeModal()">Отмена</button>
+        <button class="mfb mfb-s" onclick="saveMat()">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+ </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// КОНСТАНТЫ
+// ═══════════════════════════════════════════════════
+const MM2PT=2.8346456692913;
+const PAPER={
+  A4L:{w:841.89,h:595.28},A4P:{w:595.28,h:841.89},
+  A3L:{w:1190.55,h:841.89},A3P:{w:841.89,h:1190.55},
+  A5L:{w:595.28,h:419.53},A5P:{w:419.53,h:595.28},
+};
+const COLS=[
+  '#e94560','#4299e1','#48bb78','#ed8936','#9f7aea',
+  '#38b2ac','#f687b3','#68d391','#fbd38d','#76e4f7',
+  '#fc8181','#9ae6b4','#ed64a6','#bee3f8','#d6bcfa',
+  '#feb2b2','#c6f6d5','#faf089','#90cdf4','#fbb6ce'
+];
+
+// ═══════════════════════════════════════════════════
+// ВСТРОЕННЫЕ МАТРИЦЫ
+// ═══════════════════════════════════════════════════
+const BUILTIN=[
+  {id:'b1',name:'📖 Буклет A5',desc:'A5→A4 · 2ст.',paper:'A4L',cols:2,rows:1,sides:2,margin:0,gutter:0,scale:'fit',rot:0,type:'booklet',groupSize:4,face:['N','N+2'],back:['N+3','N+1']},
+  {id:'b2',name:'📰 2up посл.',desc:'A5→A4 · 1ст.',paper:'A4L',cols:2,rows:1,sides:1,margin:0,gutter:0,scale:'fit',rot:0,type:'seq',groupSize:2,face:['N','N+1'],back:[]},
+  {id:'b3',name:'🗞 4up A6',desc:'4→A4 · 1ст.',paper:'A4L',cols:2,rows:2,sides:1,margin:0,gutter:0,scale:'fit',rot:0,type:'seq',groupSize:4,face:['N','N+1','N+2','N+3'],back:[]},
+];
+
+// ═══════════════════════════════════════════════════
+// СОСТОЯНИЕ
+// ═══════════════════════════════════════════════════
+let matrices=BUILTIN.map(m=>({...m}));
+let selMat=matrices[0];
+let selFile=null;
+let resultBytes=null;
+let editId=null;
+let pdfReady=false;
+let vMode='printer';  // 'printer' | 'sheet'
+let flipEdge='long';  // 'long' | 'short'
+let mTab3D='layout';  // 'layout' | 'view'
+
+// ═══════════════════════════════════════════════════
+// PDF-LIB
+// ═══════════════════════════════════════════════════
+function loadCDN(){
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+  s.onload=()=>{pdfReady=true;updLib();log('pdf-lib CDN загружена','ls')};
+  s.onerror=()=>log('Ошибка CDN','le2');
+  document.head.appendChild(s);
+  log('Загрузка CDN...','lw');
+}
+document.getElementById('libFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const t=await f.text();
+  const blob=new Blob([t],{type:'text/javascript'});
+  const url=URL.createObjectURL(blob);
+  const s=document.createElement('script');s.src=url;
+  s.onload=()=>{pdfReady=true;updLib();log('pdf-lib локально загружена','ls')};
+  document.head.appendChild(s);
+});
+window.addEventListener('load',()=>{if(typeof PDFLib!=='undefined'){pdfReady=true;updLib();}else loadCDN();});
+function updLib(){
+  document.getElementById('libDot').classList.toggle('ok',pdfReady);
+  const l=document.getElementById('libLbl');
+  l.textContent=pdfReady?'pdf-lib готова':'pdf-lib не загружена';
+  l.style.color=pdfReady?'#48bb78':'rgba(255,255,255,0.35)';
+}
+
+// ═══════════════════════════════════════════════════
+// ФАЙЛ
+// ═══════════════════════════════════════════════════
+const upz=document.getElementById('upz');
+document.getElementById('fInput').addEventListener('change',e=>{if(e.target.files[0])doFile(e.target.files[0])});
+upz.addEventListener('dragover',e=>{e.preventDefault();upz.classList.add('dv')});
+upz.addEventListener('dragleave',()=>upz.classList.remove('dv'));
+upz.addEventListener('drop',e=>{e.preventDefault();upz.classList.remove('dv');const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')doFile(f)});
+function doFile(f){
+  selFile=f;
+  const mb=(f.size/1048576).toFixed(2);
+  const b=document.getElementById('fbadge');
+  b.style.display='block';b.innerHTML=`📄 <b>${f.name}</b> · ${mb} МБ`;
+  document.getElementById('procBtn').disabled=false;
+  document.getElementById('rbox').style.display='none';
+  log(`Файл: ${f.name} (${mb} МБ)`,'li');
+}
+
+// ═══════════════════════════════════════════════════
+// МАТРИЦЫ UI
+// ═══════════════════════════════════════════════════
+function renderMats(){
+  const list=document.getElementById('mlist');list.innerHTML='';
+  matrices.forEach(m=>{
+    const isB=BUILTIN.some(b=>b.id===m.id);
+    const el=document.createElement('div');
+    el.className='mitem'+(selMat&&selMat.id===m.id?' sel':'');
+    el.onclick=()=>pickMat(m.id);
+    el.innerHTML=`
+      ${!isB?`<button class="mdel" onclick="delMat(event,'${m.id}')">✕</button>`:''}
+      <div class="mvis">${miniVis(m)}</div>
+      <div class="minfo"><div class="mname">${m.name}</div><div class="mdesc">${m.desc}</div></div>
+      ${selMat&&selMat.id===m.id?'<div class="mchk">✓</div>':''}
+    `;
+    list.appendChild(el);
+  });
+}
+function miniVis(m){
+  const sc=m.cols*m.rows;
+  const rs=(f,k)=>{
+    let h=`<div class="mside" style="grid-template-columns:repeat(${m.cols},1fr);grid-template-rows:repeat(${m.rows},1fr);gap:1px">`;
+    for(let i=0;i<sc;i++){const n=evalF(f&&f[i]||'',1,m.groupSize);const bg=n>0?COLS[(n-1)%COLS.length]:'rgba(255,255,255,0.06)';h+=`<div class="mcell" style="background:${bg}">${n||''}</div>`;}
+    return h+'</div>';
+  };
+  let h=rs(m.face,'f');
+  if(m.sides===2){h+=`<div style="width:1px;background:rgba(255,255,255,0.12)"></div>`;h+=rs(m.back,'b');}
+  return h;
+}
+function pickMat(id){
+  selMat=matrices.find(m=>m.id===id)||matrices[0];
+  renderMats();
+  document.getElementById('sceneLbl').textContent=(selMat?selMat.name.toUpperCase():'');
+  PA_reset();
+}
+function delMat(e,id){
+  e.stopPropagation();if(!confirm('Удалить?'))return;
+  matrices=matrices.filter(m=>m.id!==id);
+  if(selMat&&selMat.id===id)selMat=matrices[0]||null;
+  renderMats();PA_reset();
+}
+function setVMode(m){
+  vMode=m;
+  ['P','S'].forEach(k=>document.getElementById('vb'+k).classList.toggle('on',k===m.charAt(0).toUpperCase()));
+  if(m==='printer')PA_reset();
+}
+function setFlip(e){
+  flipEdge=e;
+  document.getElementById('fbL').classList.toggle('on',e==='long');
+  document.getElementById('fbS').classList.toggle('on',e==='short');
+  PA_reset();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  3D ДВИЖОК — ОБЩИЙ
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// ИЗОМЕТРИЧЕСКАЯ ПРОЕКЦИЯ (ортогональная, без перспективы)
+// ═══════════════════════════════════════════════════
+function isoProj(px,py,pz,cx,cy,zoom,rx,ry){
+  // Поворот вокруг Y (горизонталь)
+  const cy2=Math.cos(ry), sy2=Math.sin(ry);
+  let x1=px*cy2 + pz*sy2;
+  let z1=-px*sy2 + pz*cy2;
+  let y1=py;
+  
+  // Поворот вокруг X (вертикаль) — фиксированный угол для изометрии
+  const fixedRx=-0.5236; // -30° для классической изометрии
+  const cx2=Math.cos(fixedRx), sx2=Math.sin(fixedRx);
+  let y2=y1*cx2 - z1*sx2;
+  let z2=y1*sx2 + z1*cx2;
+  let x2=x1;
+  
+  // Ортогональная проекция + зум как масштабирование
+  return{
+    sx: cx + x2*zoom,
+    sy: cy - y2*zoom,
+    sc: zoom, // для совместимости с остальным кодом
+    fz: z2    // для сортировки по глубине
+  };
+}
+function proj(px,py,pz,cx,cy,fov,rx,ry){
+  const cy2=Math.cos(ry),sy2=Math.sin(ry);
+  let ax=px*cy2+pz*sy2,az=-px*sy2+pz*cy2,ay=py;
+  const cx2=Math.cos(rx),sx2=Math.sin(rx);
+  let fy=ay*cx2-az*sx2,fz=ay*sx2+az*cx2,fx=ax;
+  const D=fov/(fov+fz+0.001);
+  return{sx:cx+fx*D,sy:cy-fy*D,sc:D,fz};
+}
+
+function fillQ(ctx,p,col,alpha=1){
+  if(!p||p.length<3)return;
+  const ax=p[1].sx-p[0].sx,ay=p[1].sy-p[0].sy;
+  const bx=p[2].sx-p[0].sx,by=p[2].sy-p[0].sy;
+  if(ax*by-ay*bx>0)return false;
+  ctx.save();if(alpha<1)ctx.globalAlpha=alpha;
+  ctx.fillStyle=col;
+  ctx.beginPath();ctx.moveTo(p[0].sx,p[0].sy);
+  p.forEach(v=>ctx.lineTo(v.sx,v.sy));
+  ctx.closePath();ctx.fill();ctx.restore();
+  return true;
+}
+function strokeQ(ctx,p,col,lw=1){
+  if(!p||p.length<3)return;
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=lw;
+  ctx.beginPath();ctx.moveTo(p[0].sx,p[0].sy);
+  p.forEach(v=>ctx.lineTo(v.sx,v.sy));
+  ctx.closePath();ctx.stroke();ctx.restore();
+}
+// Куб грани
+function cubeF(cx,cy,cz,w,h,d){
+  const hx=w/2,hy=h/2,hz=d/2;
+  return{
+    front:[{x:cx-hx,y:cy-hy,z:cz+hz},{x:cx+hx,y:cy-hy,z:cz+hz},{x:cx+hx,y:cy+hy,z:cz+hz},{x:cx-hx,y:cy+hy,z:cz+hz}],
+    back: [{x:cx+hx,y:cy-hy,z:cz-hz},{x:cx-hx,y:cy-hy,z:cz-hz},{x:cx-hx,y:cy+hy,z:cz-hz},{x:cx+hx,y:cy+hy,z:cz-hz}],
+    top:  [{x:cx-hx,y:cy-hy,z:cz-hz},{x:cx+hx,y:cy-hy,z:cz-hz},{x:cx+hx,y:cy-hy,z:cz+hz},{x:cx-hx,y:cy-hy,z:cz+hz}],
+    bot:  [{x:cx-hx,y:cy+hy,z:cz+hz},{x:cx+hx,y:cy+hy,z:cz+hz},{x:cx+hx,y:cy+hy,z:cz-hz},{x:cx-hx,y:cy+hy,z:cz-hz}],
+    left: [{x:cx-hx,y:cy-hy,z:cz-hz},{x:cx-hx,y:cy-hy,z:cz+hz},{x:cx-hx,y:cy+hy,z:cz+hz},{x:cx-hx,y:cy+hy,z:cz-hz}],
+    right:[{x:cx+hx,y:cy-hy,z:cz+hz},{x:cx+hx,y:cy-hy,z:cz-hz},{x:cx+hx,y:cy+hy,z:cz-hz},{x:cx+hx,y:cy+hy,z:cz+hz}],
+  };
+}
+function drawBox(ctx,fn,x,y,z,w,h,d,ct,cf,cs){
+  const f=cubeF(x,y,z,w,h,d);
+  const mp=v=>fn(v.x,v.y,v.z);
+  const dim=(c,b)=>{const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),bl=parseInt(c.slice(5,7),16);return `rgb(${~~(r*b)},${~~(g*b)},${~~(bl*b)})`;};
+  [
+    {v:f.back, c:dim(cf,0.55)},{v:f.bot,c:dim(ct,0.6)},
+    {v:f.left, c:dim(cs||cf,0.7)},{v:f.right,c:dim(cs||cf,0.85)},
+    {v:f.front,c:cf},{v:f.top,c:ct},
+  ].forEach(({v,c})=>{
+    const pts=v.map(mp);
+    fillQ(ctx,pts,c);strokeQ(ctx,pts,'rgba(0,0,0,0.2)',0.4);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// ГЛАВНАЯ КАМЕРА (без ограничений зума)
+// ═══════════════════════════════════════════════════
+const CAM={rx:-0.28,ry:0.55,zoom:1,drag:false,lx:0,ly:0};
+// zoom: 0.001 .. 100 — полностью без ограничений
+function camFn(W,H){
+  // Для изометрии: фиксированные углы, зум — просто масштаб
+  const baseZoom=1.2;
+  return (x,y,z)=>isoProj(x,y,z,W/2,H/2,baseZoom*CAM.zoom,CAM.rx,CAM.ry);
+}
+
+// ═══════════════════════════════════════════════════════
+// АНИМАЦИЯ ПРИНТЕРА
+// ═══════════════════════════════════════════════════════
+const PA={phase:'idle',t:0,ejectZ:0,flipA:0,vis:false};
+function PA_reset(){
+  PA.phase='idle';PA.t=0;PA.ejectZ=0;PA.flipA=0;PA.vis=false;
+  setTimeout(()=>{PA.phase='eject_face';PA.vis=true;},300);
+}
+function PA_tick(){
+  const dt=0.016;PA.t+=dt;
+  if(PA.phase==='eject_face'){
+    PA.ejectZ=easeOut(Math.min(1,PA.t/2));
+    if(PA.t>2.4){PA.phase='pause1';PA.t=0;}
+  }else if(PA.phase==='pause1'){
+    if(PA.t>0.7){PA.phase='flip';PA.t=0;}
+  }else if(PA.phase==='flip'){
+// Плавный переворот: используем кумулятивное накопление угла
+const progress=easeInOut(Math.min(1,PA.t/2));
+PA.flipA=progress*Math.PI;
+    if(PA.t>2.2){PA.phase='pause2';PA.t=0;PA.flipA=Math.PI;}
+  }else if(PA.phase==='pause2'){
+    if(PA.t>0.5){PA.phase='retract';PA.t=0;}
+  }else if(PA.phase==='retract'){
+    PA.ejectZ=easeOut(1-Math.min(1,PA.t/1));
+    if(PA.t>1.1){PA.phase='eject_back';PA.t=0;}
+  }else if(PA.phase==='eject_back'){
+    PA.ejectZ=easeOut(Math.min(1,PA.t/2));
+    if(PA.t>2.4){PA.phase='done';PA.t=0;}
+  }else if(PA.phase==='done'){
+    if(PA.t>1.8){PA.phase='idle';PA.t=0;PA.flipA=0;PA.ejectZ=0;PA.vis=false;setTimeout(()=>{PA.phase='eject_face';PA.vis=true;},600);}
+  }
+}
+function easeOut(t){return 1-(1-t)**2}
+function easeInOut(t){
+  // Cubic ease-in-out для более естественного движения
+  return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+}
+
+// ═══════════════════════════════════════════════════
+// РИСОВАТЬ ПРИНТЕР
+// ═══════════════════════════════════════════════════
+function drawPrinter(ctx,W,H){
+  const fn=camFn(W,H);
+
+  // === КОРПУС ===
+  // Основное тело
+  drawBox(ctx,fn, 0,10,0, 240,95,170, '#2a3d55','#2d4260','#223350');
+  // Верхняя крышка
+  drawBox(ctx,fn, 0,-42,0, 210,14,150, '#334d6a','#3a5878','#2c4460');
+  // Лицевая панель (декоративный выступ)
+  drawBox(ctx,fn, 5,-5,90, 190,75,12, '#334060','#3d4d72','#2c3858');
+  // Задний лоток подачи бумаги
+  drawBox(ctx,fn, 0,-20,-85, 170,6,30, '#2e4458','#38526a','#283d50');
+  // Нижняя подставка
+  drawBox(ctx,fn, 0,60,10, 260,12,180, '#1e2d40','#243550','#1a2838');
+  // Левый бок-декор
+  drawBox(ctx,fn,-118,10,0, 6,70,155, '#1e3048','#253a58','#1a2840');
+  // Правый бок-декор
+  drawBox(ctx,fn, 118,10,0, 6,70,155, '#253a58','#2e4568','#1e3050');
+
+  // === ЩЕЛЬ ВЫДАЧИ ===
+  {
+    const slotY=-8, slotZ=92, slotW=150, slotH=10;
+    const pts=[fn(-slotW/2,slotY,slotZ),fn(slotW/2,slotY,slotZ),fn(slotW/2,slotY+slotH,slotZ),fn(-slotW/2,slotY+slotH,slotZ)];
+    fillQ(ctx,pts,'#050a12');
+    // Свечение
+ctx.save();
+ctx.strokeStyle='#e94560';ctx.lineWidth=1.5;
+    ctx.strokeStyle='rgba(233,69,96,0.7)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pts[0].sx,pts[0].sy);pts.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.stroke();
+    ctx.restore();
+  }
+
+  // === КНОПКИ / ПАНЕЛЬ ===
+  // Дисплей
+  {
+    const dx=-50,dy=-20,dz=97,dw=70,dh=30;
+    const corners=[fn(dx,dy,dz),fn(dx+dw,dy,dz),fn(dx+dw,dy+dh,dz),fn(dx,dy+dh,dz)];
+    fillQ(ctx,corners,'#0a1520');
+    strokeQ(ctx,corners,'rgba(99,179,237,0.25)',0.5);
+    // Прогресс на дисплее
+    const prog=PA.phase==='eject_face'?PA.ejectZ:PA.phase==='eject_back'?0.5+PA.ejectZ*0.5:0;
+    if(prog>0&&corners[0]&&corners[1]){
+      const bw=(corners[1].sx-corners[0].sx)*0.85*prog;
+      ctx.fillStyle='rgba(99,179,237,0.5)';
+      ctx.fillRect(corners[0].sx+(corners[1].sx-corners[0].sx)*0.075,corners[2].sy+(corners[0].sy-corners[2].sy)*0.25,bw,(corners[0].sy-corners[2].sy)*0.25);
+    }
+  }
+
+  // LED индикаторы
+  [{x:-100,col:'#48bb78'},{x:-85,col:'#f6ad55'},{x:-70,col:'#e94560'}].forEach(({x,col})=>{
+    const p=fn(x,-22,97);
+    if(!p)return;
+    ctx.save();ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(p.sx,p.sy,3.5*Math.max(0.1,p.sc),0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+
+  // Кнопка питания
+  {
+    const p=fn(90,-25,97);
+    if(p){
+      ctx.save();
+      ctx.fillStyle='#334466';ctx.strokeStyle='#445577';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(p.sx,p.sy,8*Math.max(0.1,p.sc),0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#aaccdd';
+      ctx.beginPath();ctx.arc(p.sx,p.sy,3*Math.max(0.1,p.sc),0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+  }
+
+  // Название модели
+  {
+    const p=fn(0,50,97);
+    if(p){
+      ctx.save();ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font=`${10*Math.max(0.1,p.sc)}px sans-serif`;
+      ctx.textAlign='center';ctx.fillText('ImpoStudio Pro',p.sx,p.sy);ctx.restore();
+    }
+  }
+
+  // === ЛИСТ ===
+  if(PA.vis)drawSheet3D(ctx,fn,W,H);
+}
+
+// ═══════════════════════════════════════════════════
+// ДВУХСЛОЙНЫЙ ЛИСТ 3D — независимые стороны + плавный переворот
+// ═══════════════════════════════════════════════════
+function drawSheet3D(ctx,fn,W,H){
+  if(!selMat)return;
+  
+  // Параметры листа
+  const SHEET_W=145, SHEET_H=100;  // размеры в 3D-единицах
+  const LAYER_THICK=0.4;            // толщина каждого слоя (очень тонкий)
+  const GAP_BETWEEN_LAYERS=0.15;    // микро-зазор между слоями для визуального разделения
+  const slotY=-8, slotZ=92;
+  const ejectDist=SHEET_H*0.95;
+
+  // === АНИМАЦИЯ ПЕРЕВОРОТА ===
+  // flipEdge: 'long' = вращение вокруг оси X (длинная сторона)
+  //           'short' = вращение вокруг оси Y (короткая сторона)
+  const flipAngle=PA.flipA; // от 0 до π
+  const isLongEdge=(flipEdge==='long');
+  
+  // Позиция листа: выезжает из принтера по Z
+  const baseZ=slotZ+PA.ejectZ*ejectDist;
+  const sheetY=slotY-5;
+
+  // === ГЕОМЕТРИЯ: два независимых слоя ===
+  // Каждый слой — это прямоугольник с 4 углами
+  // Слои смещены друг относительно друга по нормали к плоскости
+  
+  // Функция расчёта 4 углов слоя с учётом вращения
+  function calcLayerCorners(layerOffset, flipAxis){
+    const hw=SHEET_W/2, hh=SHEET_H/2;
+    // 4 угла в локальных координатах слоя [x, y, z]
+    const localCorners=[
+      {x:-hw, y:-hh, z:0},  // TL
+      {x: hw, y:-hh, z:0},  // TR
+      {x: hw, y: hh, z:0},  // BR
+      {x:-hw, y: hh, z:0}   // BL
+    ];
+    
+    return localCorners.map(corner=>{
+      let wx,wy,wz;
+      
+      if(flipAxis==='long'){
+        // Вращение вокруг оси X (длинная сторона горизонтальна)
+        // y (высота) и z (глубина) участвуют в повороте
+        wx=corner.x;
+        wy=sheetY + corner.y*Math.cos(flipAngle) - corner.z*Math.sin(flipAngle);
+        wz=baseZ + corner.y*Math.sin(flipAngle) + corner.z*Math.cos(flipAngle) + layerOffset;
+      }else{
+        // Вращение вокруг оси Y (короткая сторона вертикальна)
+        wx=corner.x*Math.cos(flipAngle) + corner.z*Math.sin(flipAngle);
+        wy=sheetY + corner.y;
+        wz=baseZ - corner.x*Math.sin(flipAngle) + corner.z*Math.cos(flipAngle) + layerOffset;
+      }
+      
+      return fn(wx,wy,wz);
+    });
+  }
+  
+  // === РАСЧЁТ КОРНЕРОВ ДЛЯ ДВУХ СЛОЁВ ===
+  // Слой 1: "лицо" (front) — смещён на -GAP/2
+  // Слой 2: "оборот" (back) — смещён на +GAP/2
+  const cornersFront=calcLayerCorners(-GAP_BETWEEN_LAYERS/2, isLongEdge?'long':'short');
+  const cornersBack =calcLayerCorners(+GAP_BETWEEN_LAYERS/2, isLongEdge?'long':'short');
+  
+  // === ОПРЕДЕЛЕНИЕ: какая сторона смотрит на зрителя? ===
+  // Используем нормаль к плоскости: если dot(normal, viewDir) > 0 — видна
+  const viewDir={x:0,y:0,z:1}; // камера смотрит по +Z
+  // Нормаль к листу после поворота
+  let normal;
+  if(isLongEdge){
+    normal={x:0, y:-Math.sin(flipAngle), z:Math.cos(flipAngle)};
+  }else{
+    normal={x:Math.sin(flipAngle), y:0, z:Math.cos(flipAngle)};
+  }
+  const frontVisible=(normal.z>=0); // если Z-компонента положительна — лицо видно
+  
+  // === ОТРИСОВКА: правильный порядок (back-to-front) ===
+  
+  // 1. Сначала рисуем НЕвидимую сторону (она сзади)
+  if(frontVisible){
+    // Оборот сзади — рисуем с прозрачностью
+    if(cornersBack.every(p=>p)) drawSheetLayer(ctx,cornersBack,selMat,'back',0.85);
+  }else{
+    // Лицо сзади
+    if(cornersFront.every(p=>p)) drawSheetLayer(ctx,cornersFront,selMat,'face',0.85);
+  }
+  
+  // 2. Рисуем ТОРЦЫ листа (ребро) — только если лист не параллелен камере
+  if(!isEdgeOn(cornersFront)){
+    drawSheetEdge(ctx,cornersFront,cornersBack,'front');
+  }
+  
+  // 3. Рисуем ВИДИМУЮ сторону (спереди, без прозрачности)
+  if(frontVisible){
+    if(cornersFront.every(p=>p)) drawSheetLayer(ctx,cornersFront,selMat,'face',1.0);
+  }else{
+    if(cornersBack.every(p=>p)) drawSheetLayer(ctx,cornersBack,selMat,'back',1.0);
+  }
+  
+  // === ПОДПИСЬ ФАЗЫ ===
+  const phaseLabels={
+    'eject_face':'▶ Печать лица',
+    'pause1':'▪ Пауза',
+    'flip':isLongEdge?'↕ Переворот по длинному краю':'↔ Переворот по короткому',
+    'pause2':'▪',
+    'retract':'◀ Возврат',
+    'eject_back':'▶ Печать оборота',
+    'done':'✓ Готово'
+  };
+  const label=phaseLabels[PA.phase]||'';
+  if(label&&cornersFront[0]){
+    const cp=fn(0,-60,baseZ);
+    if(cp){
+      ctx.save();
+      ctx.fillStyle='rgba(255,255,255,0.6)';
+      ctx.font=`bold ${12*Math.max(0.1,cp.sc)}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.fillText(label,cp.sx,cp.sy);
+      ctx.restore();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ОТРИСОВКА ОДНОГО СЛОЯ ЛИСТА (независимая сторона)
+// ═══════════════════════════════════════════════════
+function drawSheetLayer(ctx,corners,matrix,side,alpha){
+  // 1. Заливка основы листа
+  const baseColor=side==='face'?'#f8fafc':'#f1f5f9';
+  fillQ(ctx,corners,baseColor,alpha);
+  
+  // 2. Если нет разметки — выходим
+  const formulas=side==='back'?(matrix.back||[]):(matrix.face||[]);
+  if(!formulas||!formulas.length){
+    // Просто обводка
+    strokeQ(ctx,corners,'rgba(100,116,139,0.3)',0.5*alpha);
+    return;
+  }
+  
+  // 3. Расчёт сетки ячеек
+  const [tl,tr,br,bl]=corners;
+  if(!tl||!tr||!br||!bl)return;
+  const cols=matrix.cols,rows=matrix.rows;
+  
+  // Интерполяция точки внутри квада
+  function lerpQuad(u,v){
+    const top={sx:tl.sx+(tr.sx-tl.sx)*u,sy:tl.sy+(tr.sy-tl.sy)*u};
+    const bot={sx:bl.sx+(br.sx-bl.sx)*u,sy:bl.sy+(br.sy-bl.sy)*u};
+    return{sx:top.sx+(bot.sx-top.sx)*v,sy:top.sy+(bot.sy-top.sy)*v};
+  }
+  
+  // 4. Отрисовка каждой ячейки
+  const pad=0.04; // отступ внутри ячейки
+  formulas.forEach((fml,i)=>{
+    const c=i%cols,r=Math.floor(i/cols);
+    const u0=c/cols+pad,u1=(c+1)/cols-pad;
+    const v0=r/rows+pad,v1=(r+1)/rows-pad;
+    
+    // 4 угла ячейки
+    const cellCorners=[
+      lerpQuad(u0,v0),lerpQuad(u1,v0),
+      lerpQuad(u1,v1),lerpQuad(u0,v1)
+    ];
+    if(!cellCorners.every(p=>p))return;
+    
+    // Номер страницы из формулы
+    const pageNum=evalF(fml,1,matrix.groupSize);
+    const colorIdx=pageNum>0?(pageNum-1)%COLS.length:-1;
+    
+    // Заливка ячейки
+    ctx.save();
+    ctx.globalAlpha=alpha*0.92;
+    ctx.fillStyle=colorIdx>=0?COLS[colorIdx]:'rgba(203,213,225,0.5)';
+    ctx.beginPath();
+    ctx.moveTo(cellCorners[0].sx,cellCorners[0].sy);
+    cellCorners.forEach(p=>ctx.lineTo(p.sx,p.sy));
+    ctx.closePath();
+    ctx.fill();
+    
+    // Блик (градиент сверху)
+    const grad=ctx.createLinearGradient(
+      cellCorners[0].sx,cellCorners[0].sy,
+      cellCorners[0].sx,cellCorners[2].sy
+    );
+    grad.addColorStop(0,'rgba(255,255,255,0.25)');
+    grad.addColorStop(0.5,'rgba(255,255,255,0)');
+    ctx.fillStyle=grad;
+    ctx.fill();
+    
+    // Номер страницы
+    if(pageNum>0){
+      const center=lerpQuad((c+0.5)/cols,(r+0.5)/rows);
+      const cellW=Math.abs(cellCorners[1].sx-cellCorners[0].sx);
+      const fontSize=Math.max(8,Math.min(16,cellW*0.35));
+      
+      ctx.globalAlpha=alpha;
+      ctx.fillStyle='rgba(255,255,255,0.98)';
+      ctx.font=`bold ${fontSize}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(String(pageNum),center.sx,center.sy-1);
+      
+      // Подпись "ТЕКСТ" мелким шрифтом
+      ctx.font=`${fontSize*0.55}px sans-serif`;
+      ctx.globalAlpha=alpha*0.7;
+      ctx.fillText('ТЕКСТ',center.sx,center.sy+fontSize*0.6);
+    }
+    ctx.restore();
+  });
+  
+  // 5. Линия разреза (если колонок >1)
+  if(cols>1){
+    const cutTop=lerpQuad(0.5,0.03);
+    const cutBot=lerpQuad(0.5,0.97);
+    if(cutTop&&cutBot){
+      ctx.save();
+      ctx.globalAlpha=alpha*0.6;
+      ctx.strokeStyle='#e94560';
+      ctx.lineWidth=1.2;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.moveTo(cutTop.sx,cutTop.sy);
+      ctx.lineTo(cutBot.sx,cutBot.sy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+  
+  // 6. Обводка всего листа
+  ctx.save();
+  ctx.globalAlpha=alpha*0.5;
+  ctx.strokeStyle='rgba(71,85,105,0.4)';
+  ctx.lineWidth=0.8;
+  strokeQ(ctx,corners,'rgba(71,85,105,0.4)',0.8*alpha);
+  ctx.restore();
+}
+
+// Вспомогательная: проверка, не смотрит ли лист ребром в камеру
+function isEdgeOn(corners){
+  if(!corners[0]||!corners[2])return true;
+  const dy=Math.abs(corners[2].sy-corners[0].sy);
+  return dy<2; // если высота проекции <2px — смотрим ребром
+}
+function drawSheetEdge(ctx,edgeFront,edgeBack,sideLabel){
+  // Рисуем торец листа как квад из 4 точек
+  // edgeFront и edgeBack — массивы по 2 точки: [TL, TR] или [BL, BR]
+  if(!edgeFront[0]||!edgeFront[1]||!edgeBack[0]||!edgeBack[1])return;
+  
+  const quad=[edgeFront[0],edgeFront[1],edgeBack[1],edgeBack[0]];
+  
+  // Цвет торца зависит от стороны
+  const edgeColor=sideLabel==='front'?'#d1d5db':'#9ca3af';
+  fillQ(ctx,quad,edgeColor,0.9);
+  
+  // Тонкая обводка для чёткости
+  strokeQ(ctx,quad,'rgba(55,65,81,0.3)',0.4);
+}
+
+// Независимые текстуры на каждой стороне
+function drawSideContent(ctx,pts,matrix,side,alpha){
+  const formulas=side==='back'?(matrix.back||[]):(matrix.face||[]);
+  if(!formulas||!formulas.length){
+    // Просто белый лист
+    fillQ(ctx,pts,side==='face'?'#f0f4f8':'#e8ecf2',alpha);
+    return;
+  }
+  fillQ(ctx,pts,side==='face'?'#f0f4f8':'#e8ecf2',alpha);
+
+  const [tl,tr,br,bl]=pts;
+  if(!tl||!tr||!br||!bl)return;
+  const cols=matrix.cols,rows=matrix.rows;
+
+  function bl2(u,v){
+    const tx={sx:tl.sx+(tr.sx-tl.sx)*u,sy:tl.sy+(tr.sy-tl.sy)*u};
+    const bx={sx:bl.sx+(br.sx-bl.sx)*u,sy:bl.sy+(br.sy-bl.sy)*u};
+    return{sx:tx.sx+(bx.sx-tx.sx)*v,sy:tx.sy+(bx.sy-tx.sy)*v};
+  }
+
+  const pad=0.035;
+  formulas.forEach((f,i)=>{
+    const c=i%cols,r=Math.floor(i/cols);
+    const u0=c/cols+pad,u1=(c+1)/cols-pad,v0=r/rows+pad,v1=(r+1)/rows-pad;
+    const corners=[bl2(u0,v0),bl2(u1,v0),bl2(u1,v1),bl2(u0,v1)];
+    const n=evalF(f,1,matrix.groupSize);
+    const ci=n>0?(n-1)%COLS.length:-1;
+    ctx.save();ctx.globalAlpha=alpha*0.88;
+    ctx.fillStyle=ci>=0?COLS[ci]:'rgba(210,220,230,0.5)';
+    ctx.beginPath();ctx.moveTo(corners[0].sx,corners[0].sy);corners.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();
+    if(n>0){
+      const ctr=bl2((c+0.5)/cols,(r+0.5)/rows);
+      const sz=Math.max(7,Math.min(14,Math.abs(corners[1].sx-corners[0].sx)*0.3));
+      ctx.globalAlpha=alpha;ctx.fillStyle='rgba(255,255,255,0.95)';
+      ctx.font=`bold ${sz}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(n),ctr.sx,ctr.sy);
+    }
+    ctx.restore();
+  });
+
+  // Линия разреза
+  if(cols>1){
+    const t=bl2(0.5,0.05),b=bl2(0.5,0.95);
+    if(t&&b){
+      ctx.save();ctx.strokeStyle='rgba(233,69,96,0.45)';ctx.lineWidth=0.8;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(t.sx,t.sy);ctx.lineTo(b.sx,b.sy);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ПРОСМОТР ЛИСТА — двойная 3D модель
+// ═══════════════════════════════════════════════════
+const SV={ry:0.4,rx:-0.05,drag:false,lx:0,ly:0,zoom:1};
+
+function drawSheetViewer(ctx,W,H){
+  if(!selMat)return;
+  SV.ry+=0.006;
+
+  // Используем отдельную камеру для просмотра листа
+  const fov=600*SV.zoom*CAM.zoom;
+  const fn2=(x,y,z)=>proj(x,y,z,W/2,H/2,fov,SV.rx+CAM.rx*0.2,SV.ry);
+
+  const SW=200,SH=140,THICK=1.5;
+  const cosA=Math.cos(SV.ry),sinA=Math.sin(SV.ry);
+
+  function makeSheet(zOff){
+    const corners=[{x:-SW/2,y:-SH/2},{x:SW/2,y:-SH/2},{x:SW/2,y:SH/2},{x:-SW/2,y:SH/2}];
+    return corners.map(c=>fn2(c.x*cosA,c.y,c.x*sinA+zOff));
+  }
+
+  const ptsFace=makeSheet(0);
+  const ptsBack=makeSheet(THICK);
+  const frontFacing=cosA>0;
+  const side= frontFacing?'face':'back';
+
+  // Тень
+  {
+    ctx.save();ctx.globalAlpha=0.12;
+    const sh=[{x:-SW/2,y:SH/2+25},{x:SW/2,y:SH/2+25},{x:SW/2,y:SH/2+25},{x:-SW/2,y:SH/2+25}]
+      .map(c=>fn2(c.x*cosA,c.y,c.x*sinA));
+    if(sh.every(p=>p)){ctx.fillStyle='#000';ctx.beginPath();ctx.moveTo(sh[0].sx,sh[0].sy);sh.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();}
+    ctx.restore();
+  }
+
+  // Рёбра
+  function edgePts(y){
+    return [{x:-SW/2,y},{x:SW/2,y}].map(c=>({
+      f:fn2(c.x*cosA,c.y||y,c.x*sinA),
+      b:fn2(c.x*cosA,c.y||y,c.x*sinA+THICK)
+    }));
+  }
+
+  // Рисуем в правильном порядке
+  if(frontFacing){
+    // Задняя сторона (back)
+    if(ptsBack.every(p=>p)){drawSideContent(ctx,ptsBack,selMat,'back',0.65);}
+    // Торцы
+    {
+      const t=edgePts(-SH/2),b=edgePts(SH/2);
+      if(t[0].f&&t[1].f&&t[0].b&&t[1].b)fillQ(ctx,[t[0].f,t[1].f,t[1].b,t[0].b],'rgba(210,220,230,0.7)');
+      if(b[0].f&&b[1].f&&b[0].b&&b[1].b)fillQ(ctx,[b[0].b,b[1].b,b[1].f,b[0].f],'rgba(200,212,225,0.6)');
+    }
+    // Лицевая сторона (face)
+    if(ptsFace.every(p=>p)){drawSideContent(ctx,ptsFace,selMat,'face',1);}
+  }else{
+    if(ptsFace.every(p=>p)){drawSideContent(ctx,ptsFace,selMat,'face',0.55);}
+    {
+      const t=edgePts(-SH/2),b=edgePts(SH/2);
+      if(t[0].f&&t[1].f&&t[0].b&&t[1].b)fillQ(ctx,[t[0].b,t[1].b,t[1].f,t[0].f],'rgba(210,220,230,0.7)');
+      if(b[0].f&&b[1].f&&b[0].b&&b[1].b)fillQ(ctx,[b[0].f,b[1].f,b[1].b,b[0].b],'rgba(200,212,225,0.6)');
+    }
+    if(ptsBack.every(p=>p)){drawSideContent(ctx,ptsBack,selMat,'back',1);}
+  }
+
+  // Линия разреза
+  if(selMat.cols>1&&ptsFace.every(p=>p)){
+    const[tl,tr,,bl]=ptsFace;
+    const tm={sx:(tl.sx+tr.sx)/2,sy:(tl.sy+tr.sy)/2};
+    const bm={sx:(bl.sx+(ptsFace[2]?.sx||bl.sx))/2,sy:(bl.sy+(ptsFace[2]?.sy||bl.sy))/2};
+    ctx.save();ctx.strokeStyle='rgba(233,69,96,0.4)';ctx.lineWidth=0.8;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(tm.sx,tm.sy);ctx.lineTo(bm.sx,bm.sy);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+  }
+
+  // Подпись
+  const lbl=frontFacing?'📄 Лицевая сторона':'📄 Оборотная сторона';
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText(lbl,W/2,H-14);
+  ctx.fillStyle='rgba(255,255,255,0.12)';ctx.font='9px sans-serif';
+  ctx.fillText('Вращайте мышью · Колёсико — зум',W/2,H-3);
+}
+
+// ═══════════════════════════════════════════════════
+// ГЛАВНЫЙ LOOP
+// ═══════════════════════════════════════════════════
+let C3D,CTX;
+function initMain(){
+  C3D=document.getElementById('c3d');
+  CTX=C3D.getContext('2d');
+  const panel=document.getElementById('p3d')||C3D.parentElement;
+  function rs(){C3D.width=panel.clientWidth;C3D.height=panel.clientHeight;}
+  rs();new ResizeObserver(rs).observe(panel);
+
+  C3D.addEventListener('mousedown',e=>{CAM.drag=true;CAM.lx=e.clientX;CAM.ly=e.clientY;});
+  C3D.addEventListener('mousemove',e=>{
+    if(!CAM.drag)return;
+    CAM.ry+=(e.clientX-CAM.lx)*0.007;CAM.rx+=(e.clientY-CAM.ly)*0.007;
+    CAM.rx=Math.max(-1.5,Math.min(1.5,CAM.rx));
+    CAM.lx=e.clientX;CAM.ly=e.clientY;
+  });
+  C3D.addEventListener('mouseup',()=>CAM.drag=false);
+  C3D.addEventListener('mouseleave',()=>CAM.drag=false);
+  // ЗУМА НЕЛИМИТ — просто умножаем/делим
+C3D.addEventListener('wheel',e=>{
+  e.preventDefault();
+  // Плавный зум с ограничением от 0.3 до 5.0 (чтобы не улетать)
+  const factor=1+0.15*Math.sign(-e.deltaY);
+  CAM.zoom=Math.max(0.3,Math.min(5.0,CAM.zoom*factor));
+},{passive:false});
+
+  // Для просмотра листа — отдельный drag по правой кнопке/touch
+  C3D.addEventListener('mousedown',e=>{if(e.button===2&&vMode==='sheet'){SV.drag=true;SV.lx=e.clientX;SV.ly=e.clientY;}});
+  C3D.addEventListener('mousemove',e=>{if(SV.drag){SV.ry+=(e.clientX-SV.lx)*0.012;SV.rx+=(e.clientY-SV.ly)*0.008;SV.lx=e.clientX;SV.ly=e.clientY;}});
+  C3D.addEventListener('mouseup',()=>SV.drag=false);
+  C3D.addEventListener('contextmenu',e=>e.preventDefault());
+
+  // Touch
+  let lp=0;
+  C3D.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){CAM.drag=true;CAM.lx=e.touches[0].clientX;CAM.ly=e.touches[0].clientY;}
+    if(e.touches.length===2)lp=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  },{passive:true});
+  C3D.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    if(e.touches.length===1&&CAM.drag){
+      CAM.ry+=(e.touches[0].clientX-CAM.lx)*0.009;CAM.rx+=(e.touches[0].clientY-CAM.ly)*0.009;
+      CAM.rx=Math.max(-1.5,Math.min(1.5,CAM.rx));CAM.lx=e.touches[0].clientX;CAM.ly=e.touches[0].clientY;
+    }
+    if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);CAM.zoom*=d/lp;lp=d;CAM.zoom=Math.max(0.001,CAM.zoom);}
+  },{passive:false});
+  C3D.addEventListener('touchend',()=>{CAM.drag=false;});
+
+  requestAnimationFrame(mainLoop);
+}
+
+function mainLoop(){
+  const W=C3D.width,H=C3D.height;
+  CTX.clearRect(0,0,W,H);
+  const bg=CTX.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H));
+  bg.addColorStop(0,'#0e1929');bg.addColorStop(1,'#040810');
+  CTX.fillStyle=bg;CTX.fillRect(0,0,W,H);
+  // Сетка
+  CTX.save();CTX.strokeStyle='rgba(99,179,237,0.03)';CTX.lineWidth=1;
+  for(let x=0;x<W;x+=55){CTX.beginPath();CTX.moveTo(x,0);CTX.lineTo(x,H);CTX.stroke();}
+  for(let y=0;y<H;y+=55){CTX.beginPath();CTX.moveTo(0,y);CTX.lineTo(W,y);CTX.stroke();}
+  CTX.restore();
+
+  if(vMode==='printer'){PA_tick();drawPrinter(CTX,W,H);}
+  else{drawSheetViewer(CTX,W,H);}
+  requestAnimationFrame(mainLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// МОДАЛЬНЫЙ КОНСТРУКТОР
+// ═══════════════════════════════════════════════════════════════
+
+// — 2D DnD —
+let M2D=null,M2DCtx=null;
+const DND={frags:[],slots:[],drag:null,mouse:{x:0,y:0},hovSlot:-1};
+
+// — 3D в модале —
+let M3DC=null,M3DCtx=null;
+const MCAM={rx:-0.15,ry:0.4,zoom:1,drag:false,lx:0,ly:0};
+// Расположение фрагментов в 3D пространстве (для 3D-расстановки)
+let frags3D=[];  // {id,x,y,z,rotY,color,label,sideKey,slotIdx}
+let sheet3DRotY=0.4;
+
+function initModal2D(){
+  M2D=document.getElementById('m2dCanvas');
+  M2DCtx=M2D.getContext('2d');
+  const p=document.getElementById('m2dPanel');
+  function rs(){M2D.width=p.clientWidth;M2D.height=p.clientHeight;}
+  rs();new ResizeObserver(rs).observe(p);
+
+  M2D.addEventListener('mousedown',e=>m2dDown(e));
+  M2D.addEventListener('mousemove',e=>m2dMove(e));
+  M2D.addEventListener('mouseup',  e=>m2dUp(e));
+  M2D.addEventListener('mouseleave',()=>{DND.drag=null;});
+  M2D.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];m2dDown({clientX:t.clientX,clientY:t.clientY,button:0});},{passive:false});
+  M2D.addEventListener('touchmove', e=>{e.preventDefault();const t=e.touches[0];m2dMove({clientX:t.clientX,clientY:t.clientY});},{passive:false});
+  M2D.addEventListener('touchend',  e=>{e.preventDefault();m2dUp({});},{passive:false});
+  requestAnimationFrame(m2dLoop);
+}
+
+function initModal3D(){
+  M3DC=document.getElementById('m3dCanvas');
+  M3DCtx=M3DC.getContext('2d');
+  const p=document.getElementById('m3dPanel');
+  function rs(){M3DC.width=p.clientWidth;M3DC.height=p.clientHeight;}
+  rs();new ResizeObserver(rs).observe(p);
+
+  M3DC.addEventListener('mousedown',e=>{if(e.button===2||e.button===0){MCAM.drag=true;MCAM.lx=e.clientX;MCAM.ly=e.clientY;}});
+  M3DC.addEventListener('mousemove',e=>{
+    if(MCAM.drag){MCAM.ry+=(e.clientX-MCAM.lx)*0.01;MCAM.rx+=(e.clientY-MCAM.ly)*0.01;MCAM.rx=Math.max(-1.3,Math.min(1.3,MCAM.rx));MCAM.lx=e.clientX;MCAM.ly=e.clientY;}
+    m3dMove(e);
+  });
+  M3DC.addEventListener('mouseup',e=>{MCAM.drag=false;m3dUp(e);});
+  M3DC.addEventListener('mouseleave',()=>{MCAM.drag=false;});
+  M3DC.addEventListener('wheel',e=>{e.preventDefault();MCAM.zoom*=e.deltaY<0?1.12:0.89;MCAM.zoom=Math.max(0.001,MCAM.zoom);},{passive:false});
+  M3DC.addEventListener('contextmenu',e=>e.preventDefault());
+  requestAnimationFrame(m3dLoop);
+}
+
+// ─── 2D DnD геометрия ─────────────────────────────
+function get2DGeo(W,H){
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const FW=46,FH=52,FG=7;
+  const fragAreaH=FH+22;
+  const avH=H-fragAreaH-18;
+  const shH=Math.min(avH*0.88,300);
+  const shW=sides===2?Math.min(W*0.88,(shH*1.4)*2+18):Math.min(W*0.82,shH*1.5);
+  const shX=(W-shW)/2,shY=(avH-shH)/2+10;
+  let sheets=[];
+  if(sides===1){sheets=[{x:shX,y:shY,w:shW,h:shH,side:0,label:''}];}
+  else{const sw=(shW-14)/2;sheets=[{x:shX,y:shY,w:sw,h:shH,side:0,label:'Лицо'},{x:shX+sw+14,y:shY,w:sw,h:shH,side:1,label:'Оборот'}];}
+  return{cols,rows,sides,sheets,FW,FH,FG,fragAreaH,avH};
+}
+function slotRect2D(sheet,col,row,cols,rows,pad=8,gap=4){
+  const cW=(sheet.w-pad*2-gap*(cols-1))/cols;
+  const cH=(sheet.h-pad*2-gap*(rows-1))/rows;
+  return{x:sheet.x+pad+col*(cW+gap),y:sheet.y+pad+row*(cH+gap),w:cW,h:cH};
+}
+function fragRects2D(W,H,frags,geo){
+  const{FW,FH,FG}=geo;
+  const rc=Math.max(1,Math.floor((W-16)/(FW+FG)));
+  const aY=H-FH-12;
+  return frags.map((fr,i)=>{
+    const r2=Math.floor(i/rc),c2=i%rc;
+    const cnt=Math.min(frags.length-r2*rc,rc);
+    const sX=(W-(cnt*(FW+FG)-FG))/2;
+    return{x:sX+c2*(FW+FG),y:aY-r2*(FH+5),w:FW,h:FH};
+  });
+}
+
+function m2dLoop(){
+  if(!M2DCtx){requestAnimationFrame(m2dLoop);return;}
+  const W=M2D.width,H=M2D.height;
+  M2DCtx.clearRect(0,0,W,H);
+  const bg=M2DCtx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H));
+  bg.addColorStop(0,'#0d1520');bg.addColorStop(1,'#060a12');
+  M2DCtx.fillStyle=bg;M2DCtx.fillRect(0,0,W,H);
+  draw2DScene(M2DCtx,W,H);
+  requestAnimationFrame(m2dLoop);
+}
+
+function draw2DScene(ctx,W,H){
+  const geo=get2DGeo(W,H);
+  const{cols,rows,sides,sheets,FW,FH,FG}=geo;
+
+  sheets.forEach(sh=>{
+    ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=15;
+    ctx.fillStyle='#eef2f8';rrect(ctx,sh.x,sh.y,sh.w,sh.h,5);ctx.fill();ctx.restore();
+    ctx.strokeStyle='rgba(233,69,96,0.2)';ctx.lineWidth=1.2;rrect(ctx,sh.x,sh.y,sh.w,sh.h,5);ctx.stroke();
+    if(sh.label){ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(sh.label,sh.x+sh.w/2,sh.y-7);}
+    if(cols>1){ctx.save();ctx.strokeStyle='rgba(233,69,96,0.3)';ctx.lineWidth=0.8;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(sh.x+sh.w/2,sh.y+5);ctx.lineTo(sh.x+sh.w/2,sh.y+sh.h-5);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+
+    const sSlots=DND.slots.filter(s=>s.sideIdx===sh.side);
+    sSlots.forEach(sl=>{
+      const r=slotRect2D(sh,sl.col,sl.row,cols,rows);
+      const isH=DND.hovSlot===DND.slots.indexOf(sl);
+      if(sl.fragId!==null){
+        const fr=DND.frags.find(f=>f.id===sl.fragId);
+        ctx.save();ctx.globalAlpha=0.9;ctx.fillStyle=fr?fr.color:'#aaa';rrect(ctx,r.x,r.y,r.w,r.h,3);ctx.fill();
+        const gl=ctx.createLinearGradient(r.x,r.y,r.x,r.y+r.h*0.5);gl.addColorStop(0,'rgba(255,255,255,0.22)');gl.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gl;rrect(ctx,r.x,r.y,r.w,r.h*0.5,3);ctx.fill();
+        ctx.globalAlpha=1;ctx.fillStyle='white';ctx.font=`bold ${Math.min(17,r.h*0.36)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(sl.fragId),r.x+r.w/2,r.y+r.h/2-1);
+        ctx.font=`${Math.min(8,r.h*0.16)}px sans-serif`;ctx.globalAlpha=0.7;ctx.fillText('стр.',r.x+r.w/2,r.y+r.h/2+r.h*0.2);
+        ctx.restore();
+      }else{
+        ctx.fillStyle=isH?'rgba(233,69,96,0.1)':'rgba(200,215,230,0.22)';rrect(ctx,r.x,r.y,r.w,r.h,3);ctx.fill();
+        ctx.strokeStyle=isH?'#e94560':'rgba(150,180,210,0.35)';ctx.lineWidth=isH?1.5:0.7;rrect(ctx,r.x,r.y,r.w,r.h,3);ctx.stroke();
+        ctx.fillStyle='rgba(150,180,210,0.35)';ctx.font=`${r.h*0.42}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('+',r.x+r.w/2,r.y+r.h/2);
+      }
+    });
+  });
+
+  // Зона фрагментов
+  const fAY=H-geo.FH-12;
+  ctx.fillStyle='rgba(255,255,255,0.015)';ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.8;rrect(ctx,6,fAY-14,W-12,geo.FH+20,5);ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='9px sans-serif';ctx.textAlign='left';ctx.fillText('Фрагменты — перетащите:',14,fAY-4);
+
+  const unpl=DND.frags.filter(f=>!f.placed);
+  const fRs=fragRects2D(W,H,unpl,geo);
+  unpl.forEach((fr,i)=>{if(DND.drag&&DND.drag.fragId===fr.id)return;drawFrag2D(ctx,fr,fRs[i].x,fRs[i].y,geo.FW,geo.FH,false);});
+  if(DND.drag){
+    const fr=DND.frags.find(f=>f.id===DND.drag.fragId);
+    if(fr)drawFrag2D(ctx,fr,DND.mouse.x-DND.drag.ox,DND.mouse.y-DND.drag.oy,geo.FW+4,geo.FH+4,true);
+  }
+  const allPlaced=DND.frags.every(f=>f.placed);
+  ctx.fillStyle=allPlaced?'#48bb78':'rgba(255,255,255,0.18)';ctx.font='10px sans-serif';ctx.textAlign='center';
+  ctx.fillText(allPlaced?'✅ Все размещены':'Перетащите на слоты',W/2,geo.sheets[0]?geo.sheets[0].y-18:18);
+}
+
+function drawFrag2D(ctx,fr,x,y,w,h,isDrag){
+  ctx.save();
+  if(isDrag){ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=14;}
+  ctx.fillStyle=fr.color;rrect(ctx,x,y,w,h,3);ctx.fill();
+  const gl=ctx.createLinearGradient(x,y,x,y+h*0.55);gl.addColorStop(0,'rgba(255,255,255,0.22)');gl.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gl;rrect(ctx,x,y,w,h*0.55,3);ctx.fill();
+  ctx.fillStyle='white';ctx.font=`bold ${Math.min(14,h*0.34)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(fr.id),x+w/2,y+h/2-2);
+  ctx.font=`${Math.min(8,h*0.18)}px sans-serif`;ctx.globalAlpha=0.7;ctx.fillText('ТЕКСТ',x+w/2,y+h/2+h*0.2);
+  ctx.restore();
+}
+
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+
+function m2dDown(e){
+  const rect=M2D.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  DND.mouse={x:mx,y:my};
+  const geo=get2DGeo(M2D.width,M2D.height);
+  const{cols,rows,sides,sheets}=geo;
+  for(let si=0;si<DND.slots.length;si++){
+    const sl=DND.slots[si];const sh=sheets[sl.sideIdx];if(!sh)continue;
+    const r=slotRect2D(sh,sl.col,sl.row,cols,rows);
+    if(sl.fragId!==null&&mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h){
+      DND.drag={fragId:sl.fragId,ox:geo.FW/2,oy:geo.FH/2};
+      const fr=DND.frags.find(f=>f.id===sl.fragId);if(fr)fr.placed=false;
+      sl.fragId=null;sync2dToInputs();return;
+    }
+  }
+  const unpl=DND.frags.filter(f=>!f.placed);
+  const fRs=fragRects2D(M2D.width,M2D.height,unpl,geo);
+  unpl.forEach((fr,i)=>{const r=fRs[i];if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h)DND.drag={fragId:fr.id,ox:mx-r.x,oy:my-r.y};});
+}
+function m2dMove(e){
+  const rect=M2D.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  DND.mouse={x:mx,y:my};
+  if(!DND.drag)return;
+  const geo=get2DGeo(M2D.width,M2D.height);
+  DND.hovSlot=-1;
+  for(let si=0;si<DND.slots.length;si++){
+    const sl=DND.slots[si];const sh=geo.sheets[sl.sideIdx];if(!sh)continue;
+    const r=slotRect2D(sh,sl.col,sl.row,geo.cols,geo.rows);
+    if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h){DND.hovSlot=si;break;}
+  }
+}
+function m2dUp(e){
+  if(!DND.drag)return;
+  if(M2D){
+    const rect=M2D.getBoundingClientRect();
+    const mx=(e.clientX||0)-rect.left,my=(e.clientY||0)-rect.top;
+    const geo=get2DGeo(M2D.width,M2D.height);
+    for(let si=0;si<DND.slots.length;si++){
+      const sl=DND.slots[si];const sh=geo.sheets[sl.sideIdx];if(!sh)continue;
+      const r=slotRect2D(sh,sl.col,sl.row,geo.cols,geo.rows);
+      if(mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h){
+        if(sl.fragId!==null){const old=DND.frags.find(f=>f.id===sl.fragId);if(old)old.placed=false;}
+        sl.fragId=DND.drag.fragId;const fr=DND.frags.find(f=>f.id===sl.fragId);if(fr)fr.placed=true;break;
+      }
+    }
+    sync2dToInputs();
+  }
+  DND.drag=null;DND.hovSlot=-1;
+}
+function sync2dToInputs(){
+  const cols=+document.getElementById('mCo').value||2;
+  DND.slots.forEach(sl=>{
+    const pref=sl.sideIdx===0?'sf':'sb';
+    const idx=sl.row*cols+sl.col;
+    const el=document.getElementById(`s${pref}_${idx}`);
+    if(el){el.value=sl.fragId!==null?String(sl.fragId):'';updDot(pref,idx,el.value);}
+  });
+  rebuild3DFrags();
+}
+
+// ─── 3D расстановка в модале ──────────────────────
+// Фрагменты в 3D — можно таскать на большой лист и вращать
+
+let drag3D=null; // {fragIdx, startX, startY}
+let sel3DFrag=-1; // выбранный фрагмент (для поворота)
+
+function rebuild3DFrags(){
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const gs=cols*rows*sides;
+  // Восстанавливаем позиции из слотов
+  frags3D=[];
+  DND.slots.forEach((sl,i)=>{
+    if(sl.fragId===null)return;
+    const fr=DND.frags.find(f=>f.id===sl.fragId);if(!fr)return;
+    // Вычисляем позицию на листе
+    const c=sl.col,r2=sl.row,s=sl.sideIdx;
+    const shW=160,shH=110;
+    const cellW=shW/cols,cellH=shH/rows;
+    const x=-shW/2+c*cellW+cellW/2;
+    const y=-shH/2+r2*cellH+cellH/2;
+    const z=s===0?0.5:-0.5;
+    frags3D.push({id:fr.id,color:fr.color,label:'ТЕКСТ',sideIdx:s,col:c,row:r2,x,y,z,rotY:0,placed:true,slotDef:{sideIdx:s,col:c,row:r2}});
+  });
+  // Неразмещённые — рядом в пространстве
+  DND.frags.filter(f=>!f.placed).forEach((fr,i)=>{
+    const angle=i*(Math.PI*2/Math.max(1,DND.frags.filter(f2=>!f2.placed).length));
+    frags3D.push({id:fr.id,color:fr.color,label:'ТЕКСТ',sideIdx:-1,col:-1,row:-1,
+      x:Math.cos(angle)*220,y:0,z:Math.sin(angle)*220+100,rotY:0,placed:false,slotDef:null});
+  });
+}
+
+function m3dLoop(){
+  if(!M3DCtx){requestAnimationFrame(m3dLoop);return;}
+  const W=M3DC.width,H=M3DC.height;
+  M3DCtx.clearRect(0,0,W,H);
+  const bg=M3DCtx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H));
+  bg.addColorStop(0,'#0d1520');bg.addColorStop(1,'#060a12');
+  M3DCtx.fillStyle=bg;M3DCtx.fillRect(0,0,W,H);
+  if(mTab3D==='layout')draw3DLayout(M3DCtx,W,H);
+  else draw3DView(M3DCtx,W,H);
+  requestAnimationFrame(m3dLoop);
+}
+
+function draw3DLayout(ctx,W,H){
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const fn3=(x,y,z)=>proj(x,y,z,W/2,H/2,500*MCAM.zoom,MCAM.rx,MCAM.ry);
+
+  const shW=160,shH=110,THICK=2;
+
+  // Рисуем большой лист (лицо + оборот как два слоя)
+  function drawBigSide(zOff,sideKey,alpha){
+    const corners=[{u:-shW/2,v:-shH/2},{u:shW/2,v:-shH/2},{u:shW/2,v:shH/2},{u:-shW/2,v:shH/2}];
+    const pts=corners.map(c=>fn3(c.u,c.v,zOff));
+    if(!pts.every(p=>p))return;
+    fillQ(ctx,pts,sideKey==='face'?'#f0f4f8':'#e4ecf4',alpha);
+    // Сетка слотов
+    for(let r=0;r<=rows;r++){
+      const u0=-shW/2,u1=shW/2,v=(-shH/2+r*(shH/rows));
+      const p1=fn3(u0,v,zOff),p2=fn3(u1,v,zOff);
+      if(p1&&p2){ctx.save();ctx.strokeStyle='rgba(150,180,210,0.3)';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();ctx.restore();}
+    }
+    for(let c=0;c<=cols;c++){
+      const v0=-shH/2,v1=shH/2,u=(-shW/2+c*(shW/cols));
+      const p1=fn3(u,v0,zOff),p2=fn3(u,v1,zOff);
+      if(p1&&p2){ctx.save();ctx.strokeStyle='rgba(150,180,210,0.3)';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();ctx.restore();}
+    }
+    strokeQ(ctx,pts,'rgba(160,190,220,0.4)',0.8);
+    // Метка
+    const lp=fn3(0,0,zOff);
+    if(lp){ctx.fillStyle='rgba(150,180,210,0.25)';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.fillText(sideKey==='face'?'Лицо':'Оборот',lp.sx,lp.sy);}
+  }
+
+  // Торец листа
+  const topE=[fn3(-shW/2,-shH/2,0),fn3(shW/2,-shH/2,0),fn3(shW/2,-shH/2,THICK),fn3(-shW/2,-shH/2,THICK)];
+  const botE=[fn3(-shW/2,shH/2,THICK),fn3(shW/2,shH/2,THICK),fn3(shW/2,shH/2,0),fn3(-shW/2,shH/2,0)];
+  if(topE.every(p=>p))fillQ(ctx,topE,'rgba(210,225,238,0.6)');
+  if(botE.every(p=>p))fillQ(ctx,botE,'rgba(200,218,232,0.5)');
+
+  if(sides===2){drawBigSide(THICK,'back',0.7);drawBigSide(0,'face',1);}
+  else drawBigSide(0,'face',1);
+
+  // Фрагменты 3D
+  // Сортируем по глубине
+  const sorted=[...frags3D].sort((a,b)=>{
+    const pa=fn3(a.x,a.y,a.z),pb=fn3(b.x,b.y,b.z);
+    return(pb?pb.fz:0)-(pa?pa.fz:0);
+  });
+
+  sorted.forEach((fr,fi)=>{
+    const fw=shW/cols*0.85,fh=shH/rows*0.85;
+    const isLong2=flipEdge==='long';
+    const cosR=Math.cos(fr.rotY),sinR=Math.sin(fr.rotY);
+
+    // 4 угла маленького листа (повёрнутого по rotY)
+    const fCorners=[
+      {u:-fw/2,v:-fh/2},{u:fw/2,v:-fh/2},{u:fw/2,v:fh/2},{u:-fw/2,v:fh/2}
+    ];
+    const fPts=fCorners.map(c=>{
+      const rx=c.u*cosR+c.v*sinR;
+      const rz=-c.u*sinR+c.v*cosR;
+      return fn3(fr.x+rx,fr.y,fr.z+rz);
+    });
+    if(!fPts.every(p=>p))return;
+
+    const isSel=sel3DFrag===frags3D.indexOf(fr);
+    ctx.save();
+    if(isSel){ctx.shadowColor='#f6ad55';ctx.shadowBlur=12;}
+    ctx.globalAlpha=fr.placed?0.92:0.75;
+    ctx.fillStyle=fr.color;
+    ctx.beginPath();ctx.moveTo(fPts[0].sx,fPts[0].sy);fPts.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();
+    // Блик
+    const gl2=ctx.createLinearGradient(fPts[0].sx,fPts[0].sy,fPts[3].sx,fPts[3].sy);
+    gl2.addColorStop(0,'rgba(255,255,255,0.2)');gl2.addColorStop(0.4,'rgba(255,255,255,0)');
+    ctx.fillStyle=gl2;ctx.beginPath();ctx.moveTo(fPts[0].sx,fPts[0].sy);fPts.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();
+    ctx.globalAlpha=1;
+    // Номер
+    const cp=fn3(fr.x,fr.y,fr.z);
+    if(cp){
+      const sz=Math.max(8,Math.min(14,Math.abs(fPts[1].sx-fPts[0].sx)*0.28));
+      ctx.fillStyle='rgba(255,255,255,0.95)';ctx.font=`bold ${sz}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(fr.id),cp.sx,cp.sy-3);
+      ctx.font=`${sz*0.62}px sans-serif`;ctx.globalAlpha=0.75;ctx.fillText(fr.label,cp.sx,cp.sy+sz*0.7);
+    }
+    // Рамка выделения
+    if(isSel){ctx.strokeStyle='#f6ad55';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fPts[0].sx,fPts[0].sy);fPts.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.stroke();}
+    ctx.restore();
+  });
+
+  // Подсказки
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='9px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Drag ЛКМ — вращение сцены · Клик на лист — выделить · R — повернуть выбранный',W/2,H-10);
+}
+
+// Клавиша R — поворот выбранного фрагмента
+document.addEventListener('keydown',e=>{
+  if(e.key==='r'||e.key==='R'){
+    if(sel3DFrag>=0&&sel3DFrag<frags3D.length){frags3D[sel3DFrag].rotY+=Math.PI/2;sync3DToInputs();}
+  }
+});
+
+function m3dMove(e){
+  // Клик для выделения фрагмента 3D
+}
+function m3dUp(e){
+  if(!M3DC)return;
+  const rect=M3DC.getBoundingClientRect();
+  const mx=(e.clientX||0)-rect.left,my=(e.clientY||0)-rect.top;
+  if(mTab3D!=='layout')return;
+  // Выбираем фрагмент по клику
+  const W=M3DC.width,H=M3DC.height;
+  const fn3=(x,y,z)=>proj(x,y,z,W/2,H/2,500*MCAM.zoom,MCAM.rx,MCAM.ry);
+  let best=-1,bestD=25;
+  frags3D.forEach((fr,i)=>{
+    const p=fn3(fr.x,fr.y,fr.z);
+    if(p){const d=Math.hypot(p.sx-mx,p.sy-my);if(d<bestD){bestD=d;best=i;}}
+  });
+  sel3DFrag=best;
+}
+
+function draw3DView(ctx,W,H){
+  // Независимая 3D модель листа (как в главном просмотре, но для текущих настроек)
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const gs=cols*rows*sides;
+  const tmpMat={cols,rows,sides,groupSize:gs,face:getFaceF(),back:getBackF()};
+
+  sheet3DRotY+=0.006;
+  const fn4=(x,y,z)=>proj(x,y,z,W/2,H/2,600*MCAM.zoom,MCAM.rx,sheet3DRotY);
+
+  const SW=190,SH=130,THICK=1.5;
+  const cosA=Math.cos(sheet3DRotY),sinA=Math.sin(sheet3DRotY);
+  const front=cosA>0;
+
+  function makeSh(zO){
+    return [{x:-SW/2,y:-SH/2},{x:SW/2,y:-SH/2},{x:SW/2,y:SH/2},{x:-SW/2,y:SH/2}]
+      .map(c=>fn4(c.x*cosA,c.y,c.x*sinA+zO));
+  }
+  const pF=makeSh(0),pB=makeSh(THICK);
+
+  // Торцы
+  const te=[fn4(-SW/2*cosA,-SH/2,-SW/2*sinA),fn4(SW/2*cosA,-SH/2,SW/2*sinA),fn4(SW/2*cosA,-SH/2,SW/2*sinA+THICK),fn4(-SW/2*cosA,-SH/2,-SW/2*sinA+THICK)];
+  const be=[fn4(-SW/2*cosA,SH/2,-SW/2*sinA+THICK),fn4(SW/2*cosA,SH/2,SW/2*sinA+THICK),fn4(SW/2*cosA,SH/2,SW/2*sinA),fn4(-SW/2*cosA,SH/2,-SW/2*sinA)];
+
+  // Тень
+  ctx.save();ctx.globalAlpha=0.1;const sh=pF.map(p=>p?{sx:p.sx,sy:p.sy+22}:null);if(sh.every(p=>p)){ctx.fillStyle='#000';ctx.beginPath();ctx.moveTo(sh[0].sx,sh[0].sy);sh.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();}ctx.restore();
+
+  if(front){
+    if(pB.every(p=>p)){drawSideContentTmp(ctx,pB,tmpMat,'back',0.6);}
+    if(te.every(p=>p))fillQ(ctx,te,'rgba(215,225,235,0.7)');
+    if(be.every(p=>p))fillQ(ctx,be,'rgba(205,218,230,0.6)');
+    if(pF.every(p=>p)){drawSideContentTmp(ctx,pF,tmpMat,'face',1);}
+  }else{
+    if(pF.every(p=>p)){drawSideContentTmp(ctx,pF,tmpMat,'face',0.55);}
+    if(te.every(p=>p))fillQ(ctx,te,'rgba(215,225,235,0.7)');
+    if(be.every(p=>p))fillQ(ctx,be,'rgba(205,218,230,0.6)');
+    if(pB.every(p=>p)){drawSideContentTmp(ctx,pB,tmpMat,'back',1);}
+  }
+
+  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText(front?'📄 Лицевая сторона':'📄 Оборотная сторона',W/2,H-13);
+  ctx.fillStyle='rgba(255,255,255,0.1)';ctx.font='9px sans-serif';
+  ctx.fillText('Лист вращается · Колёсико — зум',W/2,H-3);
+}
+
+function drawSideContentTmp(ctx,pts,mat,side,alpha){
+  const formulas=side==='back'?(mat.back||[]):(mat.face||[]);
+  fillQ(ctx,pts,side==='face'?'#f0f4f8':'#e4ecf4',alpha);
+  if(!formulas||!formulas.length)return;
+  const[tl,tr,br,bl]=pts;if(!tl||!tr||!br||!bl)return;
+  const cols=mat.cols,rows=mat.rows;
+  function bl2(u,v){const tx={sx:tl.sx+(tr.sx-tl.sx)*u,sy:tl.sy+(tr.sy-tl.sy)*u};const bx={sx:bl.sx+(br.sx-bl.sx)*u,sy:bl.sy+(br.sy-bl.sy)*u};return{sx:tx.sx+(bx.sx-tx.sx)*v,sy:tx.sy+(bx.sy-tx.sy)*v};}
+  const pad=0.035;
+  formulas.forEach((f,i)=>{
+    const c=i%cols,r=Math.floor(i/cols);
+    const u0=c/cols+pad,u1=(c+1)/cols-pad,v0=r/rows+pad,v1=(r+1)/rows-pad;
+    const cs=[bl2(u0,v0),bl2(u1,v0),bl2(u1,v1),bl2(u0,v1)];
+    const n=evalF(f,1,mat.groupSize);
+    const ci=n>0?(n-1)%COLS.length:-1;
+    ctx.save();ctx.globalAlpha=alpha*0.87;ctx.fillStyle=ci>=0?COLS[ci]:'rgba(210,220,230,0.4)';
+    ctx.beginPath();ctx.moveTo(cs[0].sx,cs[0].sy);cs.forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();
+    if(n>0){const ctr=bl2((c+0.5)/cols,(r+0.5)/rows);const sz=Math.max(7,Math.min(14,Math.abs(cs[1].sx-cs[0].sx)*0.3));ctx.globalAlpha=alpha;ctx.fillStyle='rgba(255,255,255,0.95)';ctx.font=`bold ${sz}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(n),ctr.sx,ctr.sy);}
+    // ТЕКСТ
+    if(n>0){const ctr=bl2((c+0.5)/cols,(r+0.5)/rows);const sz2=Math.max(5,Math.min(8,Math.abs(cs[1].sx-cs[0].sx)*0.18));ctx.globalAlpha=alpha*0.65;ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font=`${sz2}px sans-serif`;ctx.fillText('ТЕКСТ',ctr.sx,ctr.sy+sz2*1.5);}
+    ctx.restore();
+  });
+  if(cols>1){const t=bl2(0.5,0.05),b=bl2(0.5,0.95);if(t&&b){ctx.save();ctx.strokeStyle='rgba(233,69,96,0.4)';ctx.lineWidth=0.7;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(t.sx,t.sy);ctx.lineTo(b.sx,b.sy);ctx.stroke();ctx.setLineDash([]);ctx.restore();}}
+}
+
+function sync3DToInputs(){sync2dToInputs();}
+
+// ─── Вкладки модала ───
+function setMTab(tab,btn){/* только 2D теперь */}
+function setM3DTab(tab,btn){
+  mTab3D=tab;
+  document.querySelectorAll('#m3dPanel .mtab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  const h=document.getElementById('m3dHint');
+  if(h)h.textContent=tab==='layout'?'ПКМ/drag — вращение · Клик — выбор фрагмента · R — повернуть':'Лист вращается · Колёсико — зум';
+}
+
+// ═══════════════════════════════════════════════════
+// ОТКРЫТИЕ МОДАЛА
+// ═══════════════════════════════════════════════════
+function openModal(eid){
+  editId=eid||null;
+  document.getElementById('ov').classList.add('open');
+  mTab3D='layout';
+  document.getElementById('tab3dL').classList.add('on');
+  document.getElementById('tab3dV').classList.remove('on');
+  if(eid){const m=matrices.find(x=>x.id===eid);if(m)popModal(m);}else resetModal();
+  if(!M2D)initModal2D();
+  if(!M3DC)initModal3D();
+  onGC();
+}
+function closeModal(){document.getElementById('ov').classList.remove('open');}
+function popModal(m){
+  document.getElementById('mN').value=m.name;document.getElementById('mP').value=m.paper;
+  document.getElementById('mCo').value=m.cols;document.getElementById('mRo').value=m.rows;
+  document.getElementById('mSi').value=m.sides;document.getElementById('mMa').value=m.margin;
+  document.getElementById('mGu').value=m.gutter;document.getElementById('mSc').value=m.scale;
+  document.getElementById('mRt').value=m.rot;document.getElementById('mTy').value=m.type;onPC();
+}
+function resetModal(){
+  document.getElementById('mN').value='';document.getElementById('mP').value='A4L';
+  document.getElementById('mCo').value=2;document.getElementById('mRo').value=1;
+  document.getElementById('mSi').value=2;document.getElementById('mMa').value=0;
+  document.getElementById('mGu').value=0;document.getElementById('mSc').value='fit';
+  document.getElementById('mRt').value=0;document.getElementById('mTy').value='booklet';onPC();
+}
+function onPC(){document.getElementById('cusR').style.display=document.getElementById('mP').value==='CUS'?'flex':'none';}
+
+function onGC(){
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const type=document.getElementById('mTy').value;
+  const sc=cols*rows;
+  let face=[],back=[];
+  if(type==='booklet'){const b=bklt(sc,sides);face=b.face;back=b.back;}
+  else if(type==='seq'){for(let i=0;i<sc;i++)face.push(i===0?'N':`N+${i}`);if(sides===2)for(let i=0;i<sc;i++)back.push(`N+${sc+i}`);}
+  renderSlots(cols,rows,sides,face,back,type==='custom');
+  rebuildDND();rebuild3DFrags();
+}
+function bklt(sc,sides){
+  const g=sc*sides,face=[],back=[];
+  for(let i=0;i<sc;i++){const l=i*2,r=g-1-l;face.push(l===0?'N':`N+${l}`);if(sides===2)back.push(r===0?'N':`N+${r}`);}
+  return{face,back};
+}
+function renderSlots(cols,rows,sides,face,back,isCustom){
+  const sc=cols*rows;
+  const bld=(pref,fmls,label)=>{
+    let h=`<div class="sb"><div class="sbh">${label}</div><div class="sl2">`;
+    for(let i=0;i<sc;i++){
+      const r=Math.floor(i/cols),c=i%cols;
+      const f=fmls[i]||'';const n=evalF(f,1,sc*sides);
+      const col=n>0?COLS[(n-1)%COLS.length]:'rgba(255,255,255,0.12)';
+      h+=`<div class="sr"><div class="sd" id="sd_${pref}_${i}" style="background:${col}"></div><span class="slbl">R${r+1}C${c+1}</span><input class="si" id="s${pref}_${i}" value="${f}" placeholder="N,N+1…" ${isCustom?'':'readonly'} oninput="onSI('${pref}',${i},this.value)"></div>`;
+    }
+    return h+'</div></div>';
+  };
+  let html='<div class="slots-wrap">'+bld('f',face,'🖨️ Лицевая сторона');
+  if(sides===2)html+=bld('b',back,'🖨️ Оборотная сторона');
+  html+='</div>';
+  document.getElementById('slotsC').innerHTML=html;
+  document.getElementById('snote').textContent=isCustom?'N — первая стр. группы · N+k — смещение · B — последняя · 0/пусто — пустой слот':'Формулы автоматические. Выберите "Вручную" для ручного ввода.';
+}
+function onSI(pref,idx,val){updDot(pref,idx,val);rebuildDND();rebuild3DFrags();}
+function updDot(pref,idx,val){const n=evalF(val,1,99);const d=document.getElementById(`sd_${pref}_${idx}`);if(d)d.style.background=n>0?COLS[(n-1)%COLS.length]:'rgba(255,255,255,0.12)';}
+
+function rebuildDND(){
+  const cols=+document.getElementById('mCo').value||2;
+  const rows=+document.getElementById('mRo').value||1;
+  const sides=+document.getElementById('mSi').value||2;
+  const gs=cols*rows*sides;
+  DND.frags=[];for(let i=0;i<gs;i++)DND.frags.push({id:i+1,placed:false,color:COLS[i%COLS.length],label:'ТЕКСТ'});
+  DND.slots=[];
+  for(let s=0;s<sides;s++)for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)DND.slots.push({sideIdx:s,row:r,col:c,fragId:null});
+  const face=getFaceF(),back=getBackF();
+  let si=0;
+  for(let s=0;s<sides;s++){const fmls=s===0?face:back;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const f=fmls[r*cols+c]||'';const n=evalF(f,1,gs);if(n>=1&&n<=gs){DND.slots[si].fragId=n;const fr=DND.frags.find(f2=>f2.id===n);if(fr)fr.placed=true;}si++;}}
+}
+function getFaceF(){const cols=+document.getElementById('mCo').value||2,rows=+document.getElementById('mRo').value||1,arr=[];for(let i=0;i<cols*rows;i++){const el=document.getElementById(`sf_${i}`);arr.push(el?el.value.trim():'');}return arr;}
+function getBackF(){const cols=+document.getElementById('mCo').value||2,rows=+document.getElementById('mRo').value||1,sides=+document.getElementById('mSi').value||2;if(sides<2)return[];const arr=[];for(let i=0;i<cols*rows;i++){const el=document.getElementById(`sb_${i}`);arr.push(el?el.value.trim():'');}return arr;}
+
+function saveMat(){
+  const name=document.getElementById('mN').value.trim();if(!name){alert('Введите название');return;}
+  const cols=+document.getElementById('mCo').value||2,rows=+document.getElementById('mRo').value||1,sides=+document.getElementById('mSi').value||2;
+  const gs=cols*rows*sides;const face=getFaceF(),back=getBackF();
+  const paper=document.getElementById('mP').value;let cW,cH;
+  if(paper==='CUS'){cW=parseFloat(document.getElementById('mCW').value)*MM2PT;cH=parseFloat(document.getElementById('mCH').value)*MM2PT;}
+  const m={id:editId||('c_'+Date.now()),name,desc:`${cols}×${rows} · ${sides}ст. · ${paper}`,paper,customW:cW,customH:cH,cols,rows,sides,margin:parseFloat(document.getElementById('mMa').value)||0,gutter:parseFloat(document.getElementById('mGu').value)||0,scale:document.getElementById('mSc').value,rot:+document.getElementById('mRt').value||0,type:document.getElementById('mTy').value,groupSize:gs,face,back};
+  if(editId){const i=matrices.findIndex(x=>x.id===editId);if(i>=0)matrices[i]=m;}else matrices.push(m);
+  selMat=m;closeModal();renderMats();
+  document.getElementById('sceneLbl').textContent=m.name.toUpperCase();PA_reset();
+}
+
+// ═══════════════════════════════════════════════════
+// ОБРАБОТКА PDF + ETA
+// ═══════════════════════════════════════════════════
+let procStart=0,procTotal=0,procDone=0;
+
+async function startProc(){
+  if(!selFile){alert('Выберите PDF');return;}if(!selMat){alert('Выберите матрицу');return;}
+  if(!pdfReady||typeof PDFLib==='undefined'){alert('pdf-lib не загружена!');return;}
+  const btn=document.getElementById('procBtn');
+  btn.disabled=true;btn.innerHTML='<div class="bc"><div class="spinner"></div><span>Обработка...</span></div>';
+  document.getElementById('pw').style.display='block';document.getElementById('rbox').style.display='none';document.getElementById('lbox').innerHTML='';
+  procStart=Date.now();procDone=0;procTotal=0;
+  try{resultBytes=await doImpose(selMat);showResult(resultBytes);PA_reset();}
+  catch(err){log('❌ '+err.message,'le2');console.error(err);setP(0,'Ошибка');}
+  finally{btn.disabled=false;btn.innerHTML='<div class="bc"><span>⚙️</span><span>Обработать PDF</span></div>';}
+}
+
+async function doImpose(mat){
+  const{PDFDocument}=PDFLib;const CHUNK=12;
+  log('Чтение файла...','li');setP(2,'Чтение...');
+  const buf=await rdFile(selFile);
+  log('Загрузка PDF...','li');setP(7,'Загрузка PDF...');
+  const src=await PDFDocument.load(buf,{ignoreEncryption:true,updateMetadata:false});
+  const total=src.getPageCount();log(`Страниц: ${total}`,'li');
+  const{cols,rows,sides,groupSize,face,back,margin,gutter,scale,rot,paper,customW,customH}=mat;
+  const pSz=paper==='CUS'?{w:customW,h:customH}:(PAPER[paper]||PAPER.A4L);
+  const sc=cols*rows;
+  const padded=Math.ceil(total/groupSize)*groupSize;
+  const tg=padded/groupSize,to=tg*sides;
+  procTotal=tg;
+  log(`Групп: ${tg} · Листов: ${to} · Групп/чанк: ${CHUNK}`,'li');setP(10,'Создаю документ...');
+  const out=await PDFDocument.create();
+  const mPt=margin*MM2PT,gPt=gutter*MM2PT;
+
+  for(let cS=0;cS<tg;cS+=CHUNK){
+    const cE=Math.min(cS+CHUNK,tg);
+    procDone=cS;
+    const pct=10+~~((cS/tg)*84);setP(pct,`Группы ${cS+1}–${cE} из ${tg}`);
+
+    // ETA
+    if(cS>0){
+      const elapsed=(Date.now()-procStart)/1000;
+      const rate=cS/elapsed;
+      const remaining=(tg-cS)/rate;
+      const etaMin=Math.ceil(remaining/60);
+      document.getElementById('eta').textContent=etaMin<1?'Менее минуты':`≈ ${etaMin} мин. осталось`;
+    }
+
+    const needed=new Set();
+    for(let g=cS;g<cE;g++){
+      const N=g*groupSize+1;
+      [...(face||[]),...(back||[])].forEach(f=>{const n=evalF(f,N,groupSize);if(n>=1&&n<=total)needed.add(n-1);});
+    }
+    const nArr=[...needed].sort((a,b)=>a-b);
+    const eMap={};
+    if(nArr.length){const embs=await out.embedPages(nArr.map(i=>src.getPage(i)));nArr.forEach((si,ei)=>eMap[si]=embs[ei]);}
+
+    for(let g=cS;g<cE;g++){
+      const N=g*groupSize+1;
+      const sArr=[{f:face,k:'f'}];if(sides===2)sArr.push({f:back,k:'b'});
+      for(const sd of sArr){
+        const pg=out.addPage([pSz.w,pSz.h]);
+        for(let i=0;i<sc;i++){
+          const fml=sd.f&&sd.f[i]||'';const n=evalF(fml,N,groupSize);if(n<1||n>total)continue;
+          const emb=eMap[n-1];if(!emb)continue;
+          const c2=i%cols,r2=Math.floor(i/cols);
+          const tGX=gPt*(cols-1),tGY=gPt*(rows-1);
+          const cW=(pSz.w-mPt*2-tGX)/cols,cH=(pSz.h-mPt*2-tGY)/rows;
+          const x=mPt+c2*(cW+gPt),y=mPt+(rows-1-r2)*(cH+gPt);
+          const sW=emb.width,sH=emb.height;
+          const sw2=rot===90||rot===270;const eW=sw2?sH:sW,eH=sw2?sW:sH;
+          const sc2=scale==='fit'?Math.min(cW/eW,cH/eH):scale==='fill'?Math.max(cW/eW,cH/eH):1;
+          const dW=scale==='stretch'?cW:eW*sc2,dH=scale==='stretch'?cH:eH*sc2;
+          pg.drawPage(emb,{x:x+(cW-dW)/2,y:y+(cH-dH)/2,width:dW,height:dH,rotate:PDFLib.degrees(rot||0)});
+        }
+      }
+    }
+    await yld();
+  }
+  document.getElementById('eta').textContent='Финализация...';
+  log('Сохранение...','li');setP(96,'Сохранение...');
+  const bytes=await out.save({useObjectStreams:true});
+  setP(100,'Готово!');document.getElementById('eta').textContent='';
+  log(`✅ ${(bytes.length/1048576).toFixed(2)} МБ`,'ls');
+  document.getElementById('sIn').textContent=total;document.getElementById('sOut').textContent=to;
+  document.getElementById('sGr').textContent=tg;document.getElementById('sSz').textContent=(bytes.length/1048576).toFixed(1);
+  return bytes;
+}
+
+function showResult(bytes){
+  document.getElementById('rbox').style.display='block';
+  document.getElementById('dlBtn').onclick=()=>{
+    const blob=new Blob([bytes],{type:'application/pdf'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='imposition_'+(selFile?selFile.name:'out.pdf');a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),8000);log('📥 Скачан','ls');
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// УТИЛИТЫ
+// ═══════════════════════════════════════════════════
+function evalF(f,N,gs){
+  if(!f||f==='0'||f==='')return 0;
+  try{const B=N+(gs||4)-1;const v=Function('N','B',`"use strict";return +(${f});`)(N,B);return(Number.isFinite(v)&&v>0)?~~v:0;}
+  catch{return 0;}
+}
+function rdFile(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=()=>rej(new Error('Ошибка чтения'));r.readAsArrayBuffer(f);});}
+function yld(){return new Promise(r=>setTimeout(r,0));}
+function log(msg,cls){
+  const b=document.getElementById('lbox');const t=new Date().toLocaleTimeString('ru',{hour12:false});
+  const e=document.createElement('div');e.className=`le ${cls||'lm'}`;
+  e.innerHTML=`<span class="lt">[${t}]</span><span>${msg}</span>`;b.appendChild(e);b.scrollTop=b.scrollHeight;
+}
+function setP(pct,text){document.getElementById('pb').style.width=pct+'%';document.getElementById('pt').textContent=text;}
+
+// ═══════════════════════════════════════════════════
+// СТАРТ
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  renderMats();initMain();PA_reset();
+});
+</script>
+</body>
+</html>
